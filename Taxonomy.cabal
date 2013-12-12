@@ -1,0 +1,39 @@
+name:                Taxonomy
+-- The package version.  See the Haskell package versioning policy (PVP) 
+-- for standards guiding when and how versions should be incremented.
+-- http://www.haskell.org/haskellwiki/Package_versioning_policy
+-- PVP summary:      +-+------- breaking API changes
+--                   | | +----- non-breaking API additions
+--                   | | | +--- code changes with no API change
+version:             0.0.1
+synopsis:            Libary for parsing and processing of taxonomy data
+description:         Libary for parsing and processing of taxonomy data
+                     
+license:             GPL
+license-file:        LICENSE
+author:              Florian Eggenhofer
+maintainer:          egg@tbi.univie.ac.at
+-- copyright:           
+category:            Bioinformatics
+build-type:          Simple
+cabal-version:       >=1.8
+
+source-repository head
+  type:     git
+  location: https://github.com/eggzilla/Taxonomy
+
+source-repository this
+  type:     git
+  location: https://github.com/eggzilla/Taxonomy/tree/v0.0.1
+  tag:      v0.0.1
+
+library
+  -- Modules exported by the library.
+  exposed-modules:   Bio.TaxonomyData, Bio.Taxonomy 
+ 
+  -- Other library packages from which modules are imported.
+  build-depends:       base >=4.5 && <5, parsec
+  
+  -- Directories containing source files.
+  hs-source-dirs:      src
+  
