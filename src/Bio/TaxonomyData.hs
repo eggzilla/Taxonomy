@@ -14,26 +14,26 @@ data Taxonomy = Taxonomy
 -- as defined in ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump_readme.txt
 data NCBITaxDump = NCBITaxDump
   {
-    TaxDumpCitations :: [TaxDumpCitation],
-    TaxDumpDelNodes :: [TaxDumpDelNode],
-    TaxDumpDivisions :: [TaxDumpDivison],
-    TaxDumpGenCodes :: [TaxDumpGencode],
-    TaxDumpMergedNodes :: [TaxDumpMergedNode],
-    TaxDumpNames :: [TaxDumpName],
-    TaxDumpNodes :: [TaxDumpNode]
+    taxDumpCitations :: [TaxDumpCitation],
+    taxDumpDelNodes :: [TaxDumpDelNode],
+    taxDumpDivisions :: [TaxDumpDivision],
+    taxDumpGenCodes :: [TaxDumpGenCode],
+    taxDumpMergedNodes :: [TaxDumpMergedNode],
+    taxDumpNames :: [TaxDumpName],
+    taxDumpNodes :: [TaxDumpNode]
   }
   deriving (Show, Eq)
 
 data TaxDumpCitation = TaxDumpCitation
   {
    -- the unique id of citation
-   citId :: String,
+   citId :: Int,
    -- citation key
    citKey :: String,
    -- unique id in PubMed database (0 if not in PubMed)
-   pubmedId :: Maybe String,
+   pubmedId :: Maybe Int,
    -- unique id in MedLine database (0 if not in MedLine)
-   medlineId :: Maybe String,
+   medlineId :: Maybe Int,
    -- URL associated with citation
    url :: Maybe String,
    -- any text (usually article name and authors)
@@ -51,23 +51,23 @@ data TaxDumpCitation = TaxDumpCitation
 data TaxDumpDelNode = TaxDumpDelNode
   {
    -- deleted node id
-   taxID :: Int
+   delTaxId :: Int
   }
   deriving (Show, Eq)
 
 data TaxDumpDivision = TaxDumpDivision
   {
    -- taxonomy database division id
-   divisionId :: String,
+   divisionId :: Int,
    -- GenBank division code (three characters)
    divisionCDE :: String,
    -- e.g. BCT, PLN, VRT, MAM, PRI...
    divisonName :: String,
-   comments :: Maybe String
+   divisionComments :: Maybe String
   }
   deriving (Show, Eq)
 
-data TaxDumpGencode = TaxDumpGencode
+data TaxDumpGenCode = TaxDumpGenCode
   {
    -- GenBank genetic code id
    geneticCodeId :: Int,
@@ -94,11 +94,11 @@ data TaxDumpMergedNode = TaxDumpMergedNode
 data TaxDumpName = TaxDumpName
   {
    -- the id of node associated with this name
-   taxId :: Int,
+   nameTaxId :: Int,
    -- name itself
    nameTxt :: String,
    -- the unique variant of this name if name not unique
-   uniqueName :: String,
+   uniqueName :: Maybe String,
    -- (synonym, common name, ...)
    nameClass :: String
   }
@@ -113,13 +113,13 @@ data TaxDumpNode = TaxDumpNode
    -- rank of this node (superkingdom, kingdom, ...) 
    rank :: String,
    -- locus-name prefix; not unique
-   emblCode :: String,
+   emblCode :: Maybe String,
    -- see division.dmp file
-   divisionId :: String,
+   nodeDivisionId :: String,
    -- 1 if node inherits division from parent
    inheritedDivFlag :: Bool,
    -- see gencode.dmp file
-   geneticCodeId :: String,
+   nodeGeneticCodeId :: String,
    -- 1 if node inherits genetic code from parent
    inheritedGCFlag :: Bool,
    -- see gencode.dmp file 
@@ -131,6 +131,6 @@ data TaxDumpNode = TaxDumpNode
    -- 1 if this subtree has no sequence data yet
    hiddenSubtreeRootFlag :: Bool,
    -- free-text comments and citations
-   comments :: String
+   nodeComments :: String
   }
   deriving (Show, Eq)

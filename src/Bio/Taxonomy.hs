@@ -19,8 +19,8 @@ readInt :: String -> Int
 readInt = read
 
 readBool :: String -> Bool
-readBool 0 = False
-readBool 1 = True
+readBool "0" = False
+readBool "1" = True
 
 --readNCBITaxonomyDatabaseDump
 --taxdump consists of several files
@@ -38,40 +38,40 @@ readBool 1 = True
 --  eof  
 --  return $ NCBITaxDump citations delNodes 
 
-parseNCBITaxonomyDatabaseDumpCitations :: GenParser Char st TaxDumpCitations
+parseNCBITaxonomyDatabaseDumpCitations :: GenParser Char st [TaxDumpCitation]
 parseNCBITaxonomyDatabaseDumpCitations = do
-  citations <- many1 parseNCBITaxDumpCitations
-  return $ TaxDumpCitations citations
+  citations <- many1 parseNCBITaxonomyDatabaseDumpCitation
+  return $ citations
 
-parseNCBITaxonomyDatabaseDumpDelNodes :: GenParser Char st TaxDumpDelNodes
+parseNCBITaxonomyDatabaseDumpDelNodes :: GenParser Char st [TaxDumpDelNode]
 parseNCBITaxonomyDatabaseDumpDelNodes = do
-  delNodes <- many1 parseNCBITaxDumpCitations
-  return $ TaxDelNodes delNodes
+  delNodes <- many1 parseNCBITaxonomyDatabaseDumpDelNode
+  return $ delNodes
   
-parseNCBITaxonomyDatabaseDumpDivisons :: GenParser Char st TaxDumpDivisions
+parseNCBITaxonomyDatabaseDumpDivisons :: GenParser Char st [TaxDumpDivision]
 parseNCBITaxonomyDatabaseDumpDivisons = do
-  divisions <- parseNCBITaxDumpCitations
-  return $ TaxDumpDivisions divisions
+  divisions <- many1 parseNCBITaxonomyDatabaseDumpDivision
+  return $ divisions
 
-parseNCBITaxonomyDatabaseDumpGenCodes :: GenParser Char st TaxDumpGenCodes
+parseNCBITaxonomyDatabaseDumpGenCodes :: GenParser Char st [TaxDumpGenCode]
 parseNCBITaxonomyDatabaseDumpGenCodes = do
-  genCodes <- parseNCBITaxDumpCitations
-  return $ TaxDumpGenCodes genCodes
+  genCodes <- many1 parseNCBITaxonomyDatabaseDumpGenCode
+  return $ genCodes
 
-parseNCBITaxonomyDatabaseDumpMergedNodes :: GenParser Char st TaxDumpMergedNodes
+parseNCBITaxonomyDatabaseDumpMergedNodes :: GenParser Char st [TaxDumpMergedNode]
 parseNCBITaxonomyDatabaseDumpMergedNodes = do
-  mergedNodes <- parseNCBITaxDumpCitations
-  return $ TaxDumpMergedNodes mergedNodes
+  mergedNodes <- many1 parseNCBITaxonomyDatabaseDumpMergedNode
+  return $ mergedNodes
 
-parseNCBITaxonomyDatabaseDumpNames :: GenParser Char st TaxDumpNames
+parseNCBITaxonomyDatabaseDumpNames :: GenParser Char st [TaxDumpName]
 parseNCBITaxonomyDatabaseDumpNames = do
-  names <- parseNCBITaxDumpCitations
-  return $ TaxDumpNames names
+  names <- many1 parseNCBITaxonomyDatabaseDumpName
+  return $ names
 
-parseNCBITaxonomyDatabaseDumpNodes :: GenParser Char st TaxDumpNodes
+parseNCBITaxonomyDatabaseDumpNodes :: GenParser Char st [TaxDumpNode]
 parseNCBITaxonomyDatabaseDumpNodes = do
-  nodes <- parseNCBITaxDumpCitations
-  return $ TaxDumpNodes nodes
+  nodes <- many1 parseNCBITaxonomyDatabaseDumpNode
+  return $ nodes
 
 ----------------------------
 
@@ -81,7 +81,7 @@ parseNCBITaxonomyDatabaseDumpCitation = do
   tab
   char ('|')
   tab 
-  citKey <- many1 (noneOf '\t')
+  citKey <- many1 (noneOf "\t")
   tab
   char ('|')
   tab 
@@ -93,36 +93,36 @@ parseNCBITaxonomyDatabaseDumpCitation = do
   tab
   char ('|')
   tab 
-  url <- optionMaybe (many1 (noneOf ("\t")))
+  url <- optionMaybe (many1 (noneOf "\t"))
   tab
   char ('|')
   tab
-  text <- optionMaybe (many1 (noneOf '\t'))
+  text <- optionMaybe (many1 (noneOf "\t"))
   tab
   char ('|')
   tab
-  taxIdList optionMaybe (many1 parseTaxIdList)
+  taxIdList <- optionMaybe (many1 parseTaxIdList)
   tab
   char ('|')
-  eol
+  char ('\n')
   return $ TaxDumpCitation (readInt citId) citKey (liftM readInt pubmedId) (liftM readInt medlineId) url text taxIdList
 
 parseTaxIdList :: GenParser Char st Int
+parseTaxIdList = do
   optional space
-  taxId many1 digits
-  noneof ('\n')
-  return (readInt taxId)
+  taxId <- many1 digit
+  return $ (readInt taxId)
 
 parseNCBITaxonomyDatabaseDumpDelNode :: GenParser Char st TaxDumpDelNode
 parseNCBITaxonomyDatabaseDumpDelNode = do
   delNode <- many1 digit
   space
   char ('|')
-  eol
-  return $ (readInt delNode)
+  char ('\n')
+  return $ TaxDumpDelNode (readInt delNode)
   
-parseNCBITaxonomyDatabaseDumpDivison :: GenParser Char st TaxDumpDivision
-parseNCBITaxonomyDatabaseDumpDivison = do
+parseNCBITaxonomyDatabaseDumpDivision :: GenParser Char st TaxDumpDivision
+parseNCBITaxonomyDatabaseDumpDivision = do
   divisionId <- many1 digit
   tab
   char ('|')
@@ -131,14 +131,14 @@ parseNCBITaxonomyDatabaseDumpDivison = do
   tab
   char ('|')
   tab
-  divisionName <- many1 char
+  divisionName <- many1 (noneOf ("\t"))
   tab
   char ('|')
   tab
-  comments <- optionMaybe (many1 char)
+  comments <- optionMaybe (many1 (noneOf ("\t")))
   tab
   char ('|')
-  eol
+  char ('\n')
   return $ TaxDumpDivision (readInt divisionId) divisionCDE divisionName comments 
 
 parseNCBITaxonomyDatabaseDumpGenCode :: GenParser Char st TaxDumpGenCode
@@ -146,20 +146,20 @@ parseNCBITaxonomyDatabaseDumpGenCode = do
   geneticCodeId <- many1 digit 
   tab
   char ('|')
-  abbreviation <- optionMaybe (many1 char)
+  abbreviation <- optionMaybe (many1 (noneOf ("\t")))
   tab
   char ('|')
   tab
-  name <- many1 char
+  name <- many1 (noneOf ("\t"))
   tab
   char ('|')
   tab
-  cde <- many1 char
+  cde <- many1 (noneOf ("\t"))
   tab
   char ('|')
   tab
-  starts <- many1 char
-  eol
+  starts <- many1 (noneOf ("\t"))
+  char ('\n')
   return $ TaxDumpGenCode (readInt geneticCodeId) abbreviation name cde starts
 
 parseNCBITaxonomyDatabaseDumpMergedNode :: GenParser Char st TaxDumpMergedNode
@@ -171,7 +171,7 @@ parseNCBITaxonomyDatabaseDumpMergedNode = do
   newTaxId <- many1 digit
   tab
   char ('|')
-  eol
+  char ('\n')
   return $ TaxDumpMergedNode (readInt oldTaxId) (readInt newTaxId)
 
 parseNCBITaxonomyDatabaseDumpName :: GenParser Char st TaxDumpName
@@ -180,15 +180,15 @@ parseNCBITaxonomyDatabaseDumpName = do
   tab
   char ('|')
   tab
-  nameTxt <- many1 char
+  nameTxt <- many1 (noneOf ("\t"))
   tab
   char ('|')
   tab
-  uniqueName <- optionMaybe (many1 noneOf ('\t'))
+  uniqueName <- optionMaybe (many1 (noneOf "\t"))
   tab
   char ('|')
   tab
-  nameClass <- many1 noneOf ('\t')
+  nameClass <- many1 (noneOf ("\t"))
   return $ TaxDumpName (readInt taxId) nameTxt uniqueName nameClass
 
 parseNCBITaxonomyDatabaseDumpNode :: GenParser Char st TaxDumpNode
@@ -201,11 +201,11 @@ parseNCBITaxonomyDatabaseDumpNode = do
   tab
   char ('|')
   tab
-  rank <- many1 (noneOf ('\t'))
+  rank <- many1 (noneOf "\t")
   tab
   char ('|')
   tab 
-  emblCode <- optionMaybe (noneOf ('\t'))
+  emblCode <- optionMaybe (many1 (noneOf "\t"))
   tab
   char ('|')
   tab
@@ -241,15 +241,13 @@ parseNCBITaxonomyDatabaseDumpNode = do
   tab
   char ('|')
   tab
-  comments <- many1 (noneOf ('\t'))
+  comments <- many1 (noneOf "\t")
   tab
   char ('|')
-  eol
+  char ('\n')
   return $ TaxDumpNode (readInt taxId) (readInt parentTaxId) rank emblCode divisionId (readBool inheritedDivFlag) geneticCodeId (readBool inheritedGCFlag) mitochondrialGeneticCodeId (readBool inheritedMGCFlag) (readBool genBankHiddenFlag) (readBool hiddenSubtreeRootFlag) comments
 
-readBool :: String -> Bool
-readBool 0 = False
-readBool 1 = True
+
 
 --parent
 --returns the parent or Nothing
