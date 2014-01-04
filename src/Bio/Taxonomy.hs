@@ -1,7 +1,21 @@
 -- | Parse and process taxonomy data
 
 module Bio.Taxonomy (                      
-                       module Bio.TaxonomyData
+                       module Bio.TaxonomyData,
+                       parseNCBITaxDumpCitations,
+                       readNCBITaxDumpCitations,
+                       parseNCBITaxDumpDelNodes,
+                       readNCBITaxDumpDelNodes,
+                       parseNCBITaxDumpDivisons,
+                       readNCBITaxDumpDivisons,
+                       parseNCBITaxDumpGenCodes,
+                       readNCBITaxDumpGenCodes,
+                       parseNCBITaxDumpMergedNodes,
+                       readNCBITaxDumpMergedNodes,
+                       parseNCBITaxDumpNames,
+                       readNCBITaxDumpNames,
+                       parseNCBITaxDumpNodes,
+                       readNCBITaxDumpNodes
                       ) where
 
 import Bio.TaxonomyData
@@ -22,6 +36,56 @@ readBool :: String -> Bool
 readBool "0" = False
 readBool "1" = True
 
+-- | parse NCBITaxDumpCitations from input string
+parseNCBITaxDumpCitations input = parse genParserNCBITaxDumpCitations "parseTaxDumpCitations" input
+
+-- | parse NCBITaxDumpCitations from input filePath                      
+readNCBITaxDumpCitations :: String -> IO (Either ParseError [TaxDumpCitation])  
+readNCBITaxDumpCitations filePath = parseFromFile genParserNCBITaxDumpCitations filePath
+
+-- | parse NCBITaxDumpDelNodes from input string
+parseNCBITaxDumpDelNodes input = parse genParserNCBITaxDumpDelNodes "parseTaxDumpDelNodes" input
+
+-- | parse NCBITaxDumpDelNodes from input filePath                      
+readNCBITaxDumpDelNodes :: String -> IO (Either ParseError [TaxDumpDelNode])  
+readNCBITaxDumpDelNodes filePath = parseFromFile genParserNCBITaxDumpDelNodes filePath
+
+-- | parse NCBITaxDumpDivisons from input string
+parseNCBITaxDumpDivisons input = parse genParserNCBITaxDumpDivisons "parseTaxDumpDivisons" input
+
+-- | parse NCBITaxDumpDivisons from input filePath                      
+readNCBITaxDumpDivisons :: String -> IO (Either ParseError [TaxDumpDivision])  
+readNCBITaxDumpDivisons filePath = parseFromFile genParserNCBITaxDumpDivisons filePath
+
+-- | parse NCBITaxDumpGenCodes from input string
+parseNCBITaxDumpGenCodes input = parse genParserNCBITaxDumpGenCodes "parseTaxDumpGenCodes" input
+
+-- | parse NCBITaxDumpGenCodes from input filePath                      
+readNCBITaxDumpGenCodes :: String -> IO (Either ParseError [TaxDumpGenCode])  
+readNCBITaxDumpGenCodes filePath = parseFromFile genParserNCBITaxDumpGenCodes filePath
+
+-- | parse NCBITaxDumpMergedNodes from input string
+parseNCBITaxDumpMergedNodes input = parse genParserNCBITaxDumpMergedNodes "parseTaxDumpMergedNodes" input
+
+-- | parse NCBITaxDumpMergedNodes from input filePath                      
+readNCBITaxDumpMergedNodes :: String -> IO (Either ParseError [TaxDumpMergedNode])  
+readNCBITaxDumpMergedNodes filePath = parseFromFile genParserNCBITaxDumpMergedNodes filePath
+
+-- | parse NCBITaxDumpNames from input string
+parseNCBITaxDumpNames input = parse genParserNCBITaxDumpNames "parseTaxDumpNames" input
+
+-- | parse NCBITaxDumpNames from input filePath                      
+readNCBITaxDumpNames :: String -> IO (Either ParseError [TaxDumpName])  
+readNCBITaxDumpNames filePath = parseFromFile genParserNCBITaxDumpNames filePath
+
+-- | parse NCBITaxDumpNames from input string
+parseNCBITaxDumpNodes input = parse genParserNCBITaxDumpNode "parseTaxDumpNode" input
+
+-- | parse NCBITaxDumpCitations from input filePath                      
+readNCBITaxDumpNodes :: String -> IO (Either ParseError [TaxDumpNode])  
+readNCBITaxDumpNodes filePath = parseFromFile genParserNCBITaxDumpNodes filePath
+
+
 --readNCBITaxonomyDatabaseDump
 --taxdump consists of several files
 
@@ -38,45 +102,45 @@ readBool "1" = True
 --  eof  
 --  return $ NCBITaxDump citations delNodes 
 
-parseNCBITaxonomyDatabaseDumpCitations :: GenParser Char st [TaxDumpCitation]
-parseNCBITaxonomyDatabaseDumpCitations = do
-  citations <- many1 parseNCBITaxonomyDatabaseDumpCitation
+genParserNCBITaxDumpCitations :: GenParser Char st [TaxDumpCitation]
+genParserNCBITaxDumpCitations = do
+  citations <- many1 genParserNCBITaxDumpCitation
   return $ citations
 
-parseNCBITaxonomyDatabaseDumpDelNodes :: GenParser Char st [TaxDumpDelNode]
-parseNCBITaxonomyDatabaseDumpDelNodes = do
-  delNodes <- many1 parseNCBITaxonomyDatabaseDumpDelNode
+genParserNCBITaxDumpDelNodes :: GenParser Char st [TaxDumpDelNode]
+genParserNCBITaxDumpDelNodes = do
+  delNodes <- many1 genParserNCBITaxDumpDelNode
   return $ delNodes
   
-parseNCBITaxonomyDatabaseDumpDivisons :: GenParser Char st [TaxDumpDivision]
-parseNCBITaxonomyDatabaseDumpDivisons = do
-  divisions <- many1 parseNCBITaxonomyDatabaseDumpDivision
+genParserNCBITaxDumpDivisons :: GenParser Char st [TaxDumpDivision]
+genParserNCBITaxDumpDivisons = do
+  divisions <- many1 genParserNCBITaxDumpDivision
   return $ divisions
 
-parseNCBITaxonomyDatabaseDumpGenCodes :: GenParser Char st [TaxDumpGenCode]
-parseNCBITaxonomyDatabaseDumpGenCodes = do
-  genCodes <- many1 parseNCBITaxonomyDatabaseDumpGenCode
+genParserNCBITaxDumpGenCodes :: GenParser Char st [TaxDumpGenCode]
+genParserNCBITaxDumpGenCodes = do
+  genCodes <- many1 genParserNCBITaxDumpGenCode
   return $ genCodes
 
-parseNCBITaxonomyDatabaseDumpMergedNodes :: GenParser Char st [TaxDumpMergedNode]
-parseNCBITaxonomyDatabaseDumpMergedNodes = do
-  mergedNodes <- many1 parseNCBITaxonomyDatabaseDumpMergedNode
+genParserNCBITaxDumpMergedNodes :: GenParser Char st [TaxDumpMergedNode]
+genParserNCBITaxDumpMergedNodes = do
+  mergedNodes <- many1 genParserNCBITaxDumpMergedNode
   return $ mergedNodes
 
-parseNCBITaxonomyDatabaseDumpNames :: GenParser Char st [TaxDumpName]
-parseNCBITaxonomyDatabaseDumpNames = do
-  names <- many1 parseNCBITaxonomyDatabaseDumpName
+genParserNCBITaxDumpNames :: GenParser Char st [TaxDumpName]
+genParserNCBITaxDumpNames = do
+  names <- many1 genParserNCBITaxDumpName
   return $ names
 
-parseNCBITaxonomyDatabaseDumpNodes :: GenParser Char st [TaxDumpNode]
-parseNCBITaxonomyDatabaseDumpNodes = do
-  nodes <- many1 parseNCBITaxonomyDatabaseDumpNode
+genParserNCBITaxDumpNodes :: GenParser Char st [TaxDumpNode]
+genParserNCBITaxDumpNodes = do
+  nodes <- many1 genParserNCBITaxDumpNode
   return $ nodes
 
 ----------------------------
 
-parseNCBITaxonomyDatabaseDumpCitation :: GenParser Char st TaxDumpCitation
-parseNCBITaxonomyDatabaseDumpCitation = do
+genParserNCBITaxDumpCitation :: GenParser Char st TaxDumpCitation
+genParserNCBITaxDumpCitation = do
   citId <- many1 digit
   tab
   char ('|')
@@ -101,28 +165,28 @@ parseNCBITaxonomyDatabaseDumpCitation = do
   tab
   char ('|')
   tab
-  taxIdList <- optionMaybe (many1 parseTaxIdList)
+  taxIdList <- optionMaybe (many1 genParserTaxIdList)
   tab
   char ('|')
   char ('\n')
   return $ TaxDumpCitation (readInt citId) citKey (liftM readInt pubmedId) (liftM readInt medlineId) url text taxIdList
 
-parseTaxIdList :: GenParser Char st Int
-parseTaxIdList = do
+genParserTaxIdList :: GenParser Char st Int
+genParserTaxIdList = do
   optional space
   taxId <- many1 digit
   return $ (readInt taxId)
 
-parseNCBITaxonomyDatabaseDumpDelNode :: GenParser Char st TaxDumpDelNode
-parseNCBITaxonomyDatabaseDumpDelNode = do
+genParserNCBITaxDumpDelNode :: GenParser Char st TaxDumpDelNode
+genParserNCBITaxDumpDelNode = do
   delNode <- many1 digit
   space
   char ('|')
   char ('\n')
   return $ TaxDumpDelNode (readInt delNode)
   
-parseNCBITaxonomyDatabaseDumpDivision :: GenParser Char st TaxDumpDivision
-parseNCBITaxonomyDatabaseDumpDivision = do
+genParserNCBITaxDumpDivision :: GenParser Char st TaxDumpDivision
+genParserNCBITaxDumpDivision = do
   divisionId <- many1 digit
   tab
   char ('|')
@@ -141,8 +205,8 @@ parseNCBITaxonomyDatabaseDumpDivision = do
   char ('\n')
   return $ TaxDumpDivision (readInt divisionId) divisionCDE divisionName comments 
 
-parseNCBITaxonomyDatabaseDumpGenCode :: GenParser Char st TaxDumpGenCode
-parseNCBITaxonomyDatabaseDumpGenCode = do
+genParserNCBITaxDumpGenCode :: GenParser Char st TaxDumpGenCode
+genParserNCBITaxDumpGenCode = do
   geneticCodeId <- many1 digit 
   tab
   char ('|')
@@ -162,8 +226,8 @@ parseNCBITaxonomyDatabaseDumpGenCode = do
   char ('\n')
   return $ TaxDumpGenCode (readInt geneticCodeId) abbreviation name cde starts
 
-parseNCBITaxonomyDatabaseDumpMergedNode :: GenParser Char st TaxDumpMergedNode
-parseNCBITaxonomyDatabaseDumpMergedNode = do
+genParserNCBITaxDumpMergedNode :: GenParser Char st TaxDumpMergedNode
+genParserNCBITaxDumpMergedNode = do
   oldTaxId <- many1 digit
   tab
   char ('|')
@@ -174,8 +238,8 @@ parseNCBITaxonomyDatabaseDumpMergedNode = do
   char ('\n')
   return $ TaxDumpMergedNode (readInt oldTaxId) (readInt newTaxId)
 
-parseNCBITaxonomyDatabaseDumpName :: GenParser Char st TaxDumpName
-parseNCBITaxonomyDatabaseDumpName = do
+genParserNCBITaxDumpName :: GenParser Char st TaxDumpName
+genParserNCBITaxDumpName = do
   taxId <- many1 digit
   tab
   char ('|')
@@ -191,8 +255,8 @@ parseNCBITaxonomyDatabaseDumpName = do
   nameClass <- many1 (noneOf ("\t"))
   return $ TaxDumpName (readInt taxId) nameTxt uniqueName nameClass
 
-parseNCBITaxonomyDatabaseDumpNode :: GenParser Char st TaxDumpNode
-parseNCBITaxonomyDatabaseDumpNode = do
+genParserNCBITaxDumpNode :: GenParser Char st TaxDumpNode
+genParserNCBITaxDumpNode = do
   taxId <- many1 digit
   tab
   char ('|') 
