@@ -36,6 +36,22 @@ readBool :: String -> Bool
 readBool "0" = False
 readBool "1" = True
 
+genParserTaxIdList :: GenParser Char st Int
+genParserTaxIdList = do
+  optional (char ' ')
+  taxId <- many1 digit
+  optional (char ' ')
+  return $ (readInt taxId)
+
+genParserTaxURL :: GenParser Char st String
+genParserTaxURL = do
+  url1 <- many1 (noneOf ("|"))
+  -- some URL fields contain \t characters
+  --optional (char '\t')
+  --url2 <- many1 (noneOf ("\t|"))
+  return $ (url1)
+
+
 -- | parse NCBITaxDumpCitations from input string
 parseNCBITaxDumpCitations input = parse genParserNCBITaxDumpCitations "parseTaxDumpCitations" input
 
@@ -145,7 +161,7 @@ genParserNCBITaxDumpCitation = do
   tab
   char ('|')
   tab 
-  citKey <- many1 (noneOf "\t")
+  citKey <- optionMaybe (many1 (noneOf "\t"))
   tab
   char ('|')
   tab 
@@ -157,7 +173,8 @@ genParserNCBITaxDumpCitation = do
   tab
   char ('|')
   tab 
-  url <- optionMaybe (many1 (noneOf "\t"))
+  url <- optionMaybe genParserTaxURL
+  --optional (string "ë|")
   tab
   char ('|')
   tab
@@ -170,12 +187,6 @@ genParserNCBITaxDumpCitation = do
   char ('|')
   char ('\n')
   return $ TaxDumpCitation (readInt citId) citKey (liftM readInt pubmedId) (liftM readInt medlineId) url text taxIdList
-
-genParserTaxIdList :: GenParser Char st Int
-genParserTaxIdList = do
-  optional space
-  taxId <- many1 digit
-  return $ (readInt taxId)
 
 genParserNCBITaxDumpDelNode :: GenParser Char st TaxDumpDelNode
 genParserNCBITaxDumpDelNode = do

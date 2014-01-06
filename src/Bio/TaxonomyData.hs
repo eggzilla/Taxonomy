@@ -29,7 +29,7 @@ data TaxDumpCitation = TaxDumpCitation
    -- the unique id of citation
    citId :: Int,
    -- citation key
-   citKey :: String,
+   citKey :: Maybe String,
    -- unique id in PubMed database (0 if not in PubMed)
    pubmedId :: Maybe Int,
    -- unique id in MedLine database (0 if not in MedLine)
