@@ -19,6 +19,7 @@ module Bio.Taxonomy (
                       ) where
 
 import Bio.TaxonomyData
+import Data.Maybe
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Token
 import Text.ParserCombinators.Parsec.Language (emptyDef)    
@@ -176,10 +177,10 @@ genParserNCBITaxDumpCitation = do
   tab
   char ('|')
   tab 
-  url <- optionMaybe genParserTaxURL
+  url1 <- optionMaybe genParserTaxURL
   --optional (string "ë|")
   tab
-  optional (skipMany (noneOf ("|")))
+  url2 <- optionMaybe (many1 (noneOf ("|")))
   char ('|')
   tab
   text <- optionMaybe (many1 (noneOf "\t"))
@@ -190,7 +191,15 @@ genParserNCBITaxDumpCitation = do
   tab
   char ('|')
   char ('\n')
-  return $ TaxDumpCitation (readInt citId) citKey (liftM readInt pubmedId) (liftM readInt medlineId) url text taxIdList
+  return $ TaxDumpCitation (readInt citId) citKey (liftM readInt pubmedId) (liftM readInt medlineId) (concatenateURLParts url1 url2) text taxIdList
+
+concatenateURLParts :: Maybe String -> Maybe String -> Maybe String
+concatenateURLParts url1 url2 
+  | (isJust url1) && (isJust url2) = mconcat url1 url2
+  | (isJust url1) && (isNothing url2) = url1
+  | otherwise = Nothing 
+
+mconcat = liftM2 (++)
 
 genParserNCBITaxDumpDelNode :: GenParser Char st TaxDumpDelNode
 genParserNCBITaxDumpDelNode = do
