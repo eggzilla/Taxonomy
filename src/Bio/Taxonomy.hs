@@ -44,16 +44,25 @@ genParserTaxIdList = do
   optional (char ' ')
   return $ (readInt taxId)
 
-genParserTaxURL :: GenParser Char st String
+genParserTaxURL :: GenParser Char st (Maybe String)
 genParserTaxURL = do
-  --url1 <- (noneOf "\t") `sepBy` (optional (string "\tN"))
-  url1 <- many1 (noneOf "\t")
-  
-  -- some URL fields contain \t characters
-  --string "\t"
-  --notFollowedBy char '|'
-  --url2 <- (many1 (noneOf ("\t")))
-  return $ url1 -- ++ url2)
+  tab 
+  url1 <- optionMaybe (many1 (noneOf "\t"))
+  tab
+  url2 <- optionMaybe (many1 (noneOf ("|")))
+  return $ (concatenateURLParts url1 url2)
+
+
+concatenateURLParts :: Maybe String -> Maybe String -> Maybe String
+concatenateURLParts url1 url2 
+  | (isJust url1) && (isJust url2) = maybeStringConcat url1 url2
+  | (isJust url1) && (isNothing url2) = url1
+  | otherwise = Nothing 
+
+maybeStringConcat :: Maybe String -> Maybe String -> Maybe String
+maybeStringConcat = liftM2 (++)
+
+--------------------------------------------------------
 
 
 -- | parse NCBITaxDumpCitations from input string
@@ -175,12 +184,8 @@ genParserNCBITaxDumpCitation = do
   tab  
   medlineId <- optionMaybe (many1 digit)
   tab
-  char ('|')
-  tab 
-  url1 <- optionMaybe genParserTaxURL
-  --optional (string "ë|")
-  tab
-  url2 <- optionMaybe (many1 (noneOf ("|")))
+  char ('|') 
+  url <- genParserTaxURL
   char ('|')
   tab
   text <- optionMaybe (many1 (noneOf "\t"))
@@ -191,15 +196,7 @@ genParserNCBITaxDumpCitation = do
   tab
   char ('|')
   char ('\n')
-  return $ TaxDumpCitation (readInt citId) citKey (liftM readInt pubmedId) (liftM readInt medlineId) (concatenateURLParts url1 url2) text taxIdList
-
-concatenateURLParts :: Maybe String -> Maybe String -> Maybe String
-concatenateURLParts url1 url2 
-  | (isJust url1) && (isJust url2) = mconcat url1 url2
-  | (isJust url1) && (isNothing url2) = url1
-  | otherwise = Nothing 
-
-mconcat = liftM2 (++)
+  return $ TaxDumpCitation (readInt citId) citKey (liftM readInt pubmedId) (liftM readInt medlineId) url text taxIdList
 
 genParserNCBITaxDumpDelNode :: GenParser Char st TaxDumpDelNode
 genParserNCBITaxDumpDelNode = do
