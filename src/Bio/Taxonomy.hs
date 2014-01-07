@@ -17,13 +17,18 @@ module Bio.Taxonomy (
                        parseNCBITaxDumpNodes,
                        readNCBITaxDumpNodes
                       ) where
-
+import Prelude 
+import System.IO 
+import Text.Parsec.Prim
 import Bio.TaxonomyData
 import Data.Maybe
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Token
 import Text.ParserCombinators.Parsec.Language (emptyDef)    
 import Control.Monad
+
+
+
 
 --Auxiliary functions
 
@@ -52,7 +57,6 @@ genParserTaxURL = do
   url2 <- optionMaybe (many1 (noneOf ("|")))
   return $ (concatenateURLParts url1 url2)
 
-
 concatenateURLParts :: Maybe String -> Maybe String -> Maybe String
 concatenateURLParts url1 url2 
   | (isJust url1) && (isJust url2) = maybeStringConcat url1 url2
@@ -62,6 +66,17 @@ concatenateURLParts url1 url2
 maybeStringConcat :: Maybe String -> Maybe String -> Maybe String
 maybeStringConcat = liftM2 (++)
 
+readEncodedFile encoding name = do 
+  handle <- openFile name ReadMode
+  hSetEncoding handle encoding
+  hGetContents handle
+
+parseFromFileEncISO88591 :: Parser a -> String -> IO (Either ParseError a)
+parseFromFileEncISO88591 parser fname = do 
+         input <- readEncodedFile latin1 fname
+         return (runP parser () fname input)
+
+
 --------------------------------------------------------
 
 
@@ -70,7 +85,7 @@ parseNCBITaxDumpCitations input = parse genParserNCBITaxDumpCitations "parseTaxD
 
 -- | parse NCBITaxDumpCitations from input filePath                      
 readNCBITaxDumpCitations :: String -> IO (Either ParseError [TaxDumpCitation])  
-readNCBITaxDumpCitations filePath = parseFromFile genParserNCBITaxDumpCitations filePath
+readNCBITaxDumpCitations filePath = parseFromFileEncISO88591 genParserNCBITaxDumpCitations filePath
 
 -- | parse NCBITaxDumpDelNodes from input string
 parseNCBITaxDumpDelNodes input = parse genParserNCBITaxDumpDelNodes "parseTaxDumpDelNodes" input
