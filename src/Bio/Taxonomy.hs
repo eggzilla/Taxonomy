@@ -45,11 +45,14 @@ genParserTaxIdList = do
 
 genParserTaxURL :: GenParser Char st String
 genParserTaxURL = do
-  url1 <- many1 (noneOf ("|"))
+  --url1 <- (noneOf "\t") `sepBy` (optional (string "\tN"))
+  url1 <- many1 (noneOf "\t")
+  
   -- some URL fields contain \t characters
-  --optional (char '\t')
-  --url2 <- many1 (noneOf ("\t|"))
-  return $ (url1)
+  --string "\t"
+  --notFollowedBy char '|'
+  --url2 <- (many1 (noneOf ("\t")))
+  return $ url1 -- ++ url2)
 
 
 -- | parse NCBITaxDumpCitations from input string
@@ -176,6 +179,7 @@ genParserNCBITaxDumpCitation = do
   url <- optionMaybe genParserTaxURL
   --optional (string "ë|")
   tab
+  optional (skipMany (noneOf ("|")))
   char ('|')
   tab
   text <- optionMaybe (many1 (noneOf "\t"))
