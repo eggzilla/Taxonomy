@@ -2,13 +2,24 @@
 --   taxonomy data
 
 module Bio.TaxonomyData where
-    
+import Data.Tree
+
+--constructSimpleTaxonomyTree :: [TaxDumpNode] -> [TaxDumpName] -> SimpleTaxonomyTree
+
 -- | 
-data Taxonomy = Taxonomy
-  {
-    taxData :: String
-  }
-  deriving (Show, Eq)
+data SimpleTaxonomyEntry = SimpleTaxonomyEntry 
+ {
+  -- node id in GenBank
+   entryId :: Int,
+   -- rank of this node (superkingdom, kingdom, ...) 
+   entryRank :: String,
+   -- locus-name prefix; not unique
+   entryName :: String,
+   -- 
+   entryGenomeAccession :: Maybe String
+ }
+ deriving (Show, Eq)
+
 
 -- | NCBI Taxonomy database dump hierachichal data structure
 -- as defined in ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump_readme.txt

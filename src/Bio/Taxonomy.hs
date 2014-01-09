@@ -27,9 +27,6 @@ import Text.ParserCombinators.Parsec.Token
 import Text.ParserCombinators.Parsec.Language (emptyDef)    
 import Control.Monad
 
-
-
-
 --Auxiliary functions
 
 readDouble :: String -> Double
