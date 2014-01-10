@@ -26,7 +26,9 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Token
 import Text.ParserCombinators.Parsec.Language (emptyDef)    
 import Control.Monad
-
+import Data.Tree
+import Data.List
+--import Data.List.Utils    
 --Auxiliary functions
 
 readDouble :: String -> Double
@@ -76,7 +78,16 @@ parseFromFileEncISO88591 parser fname = do
 
 --------------------------------------------------------
 
+constructTaxTree :: [TaxDumpNode] -> Tree TaxDumpNode 
+constructTaxTree (node:nodes) = Node node (childelements (taxId node) nodes)
 
+childelements :: Int -> [TaxDumpNode] -> [Tree TaxDumpNode]
+childelements currentTaxId nodes = do
+  let (childElements, remainingElements) = partition (\x -> parentTaxId x == currentTaxId) nodes
+  let subtreeLists = map (\x -> (x:remainingElements)) childElements
+  let subtreeSeeds = map constructTaxTree subtreeLists
+  return $ (head subtreeSeeds)                                  
+         
 -- | parse NCBITaxDumpCitations from input string
 parseNCBITaxDumpCitations input = parse genParserNCBITaxDumpCitations "parseTaxDumpCitations" input
 
