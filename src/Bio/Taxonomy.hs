@@ -349,7 +349,7 @@ genParserNCBITaxDumpNode = do
   tab
   char ('|')
   tab
-  comments <- many1 (noneOf "\t")
+  comments <- optionMaybe (many1 (noneOf "\t"))
   tab
   char ('|')
   char ('\n')

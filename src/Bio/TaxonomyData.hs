@@ -142,6 +142,6 @@ data TaxDumpNode = TaxDumpNode
    -- 1 if this subtree has no sequence data yet
    hiddenSubtreeRootFlag :: Bool,
    -- free-text comments and citations
-   nodeComments :: String
+   nodeComments :: Maybe String
   }
   deriving (Show, Eq)
