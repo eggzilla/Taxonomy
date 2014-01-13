@@ -6,8 +6,8 @@ module Bio.Taxonomy (
                        readNCBITaxDumpCitations,
                        parseNCBITaxDumpDelNodes,
                        readNCBITaxDumpDelNodes,
-                       parseNCBITaxDumpDivisons,
-                       readNCBITaxDumpDivisons,
+                       parseNCBITaxDumpDivisions,
+                       readNCBITaxDumpDivisions,
                        parseNCBITaxDumpGenCodes,
                        readNCBITaxDumpGenCodes,
                        parseNCBITaxDumpMergedNodes,
@@ -103,11 +103,11 @@ readNCBITaxDumpDelNodes :: String -> IO (Either ParseError [TaxDumpDelNode])
 readNCBITaxDumpDelNodes filePath = parseFromFile genParserNCBITaxDumpDelNodes filePath
 
 -- | parse NCBITaxDumpDivisons from input string
-parseNCBITaxDumpDivisons input = parse genParserNCBITaxDumpDivisons "parseTaxDumpDivisons" input
+parseNCBITaxDumpDivisions input = parse genParserNCBITaxDumpDivisons "parseTaxDumpDivisons" input
 
 -- | parse NCBITaxDumpDivisons from input filePath                      
-readNCBITaxDumpDivisons :: String -> IO (Either ParseError [TaxDumpDivision])  
-readNCBITaxDumpDivisons filePath = parseFromFile genParserNCBITaxDumpDivisons filePath
+readNCBITaxDumpDivisions :: String -> IO (Either ParseError [TaxDumpDivision])  
+readNCBITaxDumpDivisions filePath = parseFromFile genParserNCBITaxDumpDivisons filePath
 
 -- | parse NCBITaxDumpGenCodes from input string
 parseNCBITaxDumpGenCodes input = parse genParserNCBITaxDumpGenCodes "parseTaxDumpGenCodes" input
@@ -254,6 +254,7 @@ genParserNCBITaxDumpGenCode = do
   geneticCodeId <- many1 digit 
   tab
   char ('|')
+  tab
   abbreviation <- optionMaybe (many1 (noneOf ("\t")))
   tab
   char ('|')
@@ -267,6 +268,8 @@ genParserNCBITaxDumpGenCode = do
   char ('|')
   tab
   starts <- many1 (noneOf ("\t"))
+  tab
+  char ('|')
   char ('\n')
   return $ TaxDumpGenCode (readInt geneticCodeId) abbreviation name cde starts
 
