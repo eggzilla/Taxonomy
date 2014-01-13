@@ -15,7 +15,8 @@ module Bio.Taxonomy (
                        parseNCBITaxDumpNames,
                        readNCBITaxDumpNames,
                        parseNCBITaxDumpNodes,
-                       readNCBITaxDumpNodes
+                       readNCBITaxDumpNodes,
+                       readNCBITaxonomyDatabaseDump
                       ) where
 import Prelude 
 import System.IO 
@@ -28,9 +29,10 @@ import Text.ParserCombinators.Parsec.Language (emptyDef)
 import Control.Monad
 import Data.Tree
 import Data.List
---import Data.List.Utils    
+import Data.Either
+import Data.Either.Unwrap
+ 
 --Auxiliary functions
-
 readDouble :: String -> Double
 readDouble = read              
 
@@ -75,6 +77,16 @@ parseFromFileEncISO88591 parser fname = do
          input <- readEncodedFile latin1 fname
          return (runP parser () fname input)
 
+-- | check a list of parsing results for presence of Left aka Parse error
+--checkParsing :: [Either ParseError a] -> Either [ParseError] NCBITaxDump
+checkParsing parseErrors citations delNodes divisons genCodes mergedNodes names nodes
+  | join (parseErrors) == "" = Right (NCBITaxDump (fromRight citations) (fromRight delNodes) (fromRight divisons) (fromRight genCodes) (fromRight mergedNodes) (fromRight names) (fromRight nodes))
+  | otherwise = Left (parseErrors)
+
+extractParseError :: Either ParseError a -> String
+extractParseError parse
+  | isLeft parse = show (fromLeft parse)
+  | otherwise = ""
 
 --------------------------------------------------------
 
@@ -137,22 +149,25 @@ parseNCBITaxDumpNodes input = parse genParserNCBITaxDumpNode "parseTaxDumpNode" 
 readNCBITaxDumpNodes :: String -> IO (Either ParseError [TaxDumpNode])  
 readNCBITaxDumpNodes filePath = parseFromFile genParserNCBITaxDumpNodes filePath
 
-
---readNCBITaxonomyDatabaseDump
---taxdump consists of several files
-
 -- | Parse the input as NCBITaxDump datatype
---parseNCBITaxonomyDatabaseDump :: GenParser Char st NCBITaxDump
---parseNCBITaxonomyDatabaseDump = do
---  citations <- parseNCBITaxDumpCitations
---  delNodes <- parse 
---  divisons <-
---  genCodes <-
---  mergedNodes <-
---  names <-
---  nodes <- 
---  eof  
---  return $ NCBITaxDump citations delNodes 
+--readNCBITaxonomyDatabaseDump :: String -> GenParser Char st (Either [ParseError] NCBITaxDump)
+readNCBITaxonomyDatabaseDump folder = do
+  citations <- readNCBITaxDumpCitations (folder ++ "citations.dmp")
+  let citationsError = extractParseError citations
+  delNodes <- readNCBITaxDumpDelNodes (folder ++ "delnodes.dmp")
+  let delNodesError = extractParseError delNodes
+  divisons <- readNCBITaxDumpDivisions (folder ++ "division.dmp")
+  let divisonsError = extractParseError divisons
+  genCodes <- readNCBITaxDumpGenCodes (folder ++ "gencode.dmp")
+  let genCodesError = extractParseError genCodes
+  mergedNodes <- readNCBITaxDumpMergedNodes (folder ++ "merged.dmp")
+  let mergedNodesError = extractParseError mergedNodes
+  names <- readNCBITaxDumpNames (folder ++ "names.dmp")
+  let namesError = extractParseError names
+  nodes <- readNCBITaxDumpNodes (folder ++ "nodes.dmp") 
+  let nodesError = extractParseError nodes
+  let parseErrors =  [citationsError, delNodesError, divisonsError, genCodesError, mergedNodesError, namesError, nodesError]
+  return $ (checkParsing parseErrors citations delNodes divisons genCodes mergedNodes names nodes)
 
 genParserNCBITaxDumpCitations :: GenParser Char st [TaxDumpCitation]
 genParserNCBITaxDumpCitations = do
