@@ -30,63 +30,7 @@ import Control.Monad
 import Data.Tree
 import Data.List
 import Data.Either
-import Data.Either.Unwrap
- 
---Auxiliary functions
-readDouble :: String -> Double
-readDouble = read              
-
-readInt :: String -> Int
-readInt = read
-
-readBool :: String -> Bool
-readBool "0" = False
-readBool "1" = True
-
-genParserTaxIdList :: GenParser Char st Int
-genParserTaxIdList = do
-  optional (char ' ')
-  taxId <- many1 digit
-  optional (char ' ')
-  return $ (readInt taxId)
-
-genParserTaxURL :: GenParser Char st (Maybe String)
-genParserTaxURL = do
-  tab 
-  url1 <- optionMaybe (many1 (noneOf "\t"))
-  tab
-  url2 <- optionMaybe (many1 (noneOf ("|")))
-  return $ (concatenateURLParts url1 url2)
-
-concatenateURLParts :: Maybe String -> Maybe String -> Maybe String
-concatenateURLParts url1 url2 
-  | (isJust url1) && (isJust url2) = maybeStringConcat url1 url2
-  | (isJust url1) && (isNothing url2) = url1
-  | otherwise = Nothing 
-
-maybeStringConcat :: Maybe String -> Maybe String -> Maybe String
-maybeStringConcat = liftM2 (++)
-
-readEncodedFile encoding name = do 
-  handle <- openFile name ReadMode
-  hSetEncoding handle encoding
-  hGetContents handle
-
-parseFromFileEncISO88591 :: Parser a -> String -> IO (Either ParseError a)
-parseFromFileEncISO88591 parser fname = do 
-         input <- readEncodedFile latin1 fname
-         return (runP parser () fname input)
-
--- | check a list of parsing results for presence of Left aka Parse error
---checkParsing :: [Either ParseError a] -> Either [ParseError] NCBITaxDump
-checkParsing parseErrors citations delNodes divisons genCodes mergedNodes names nodes
-  | join (parseErrors) == "" = Right (NCBITaxDump (fromRight citations) (fromRight delNodes) (fromRight divisons) (fromRight genCodes) (fromRight mergedNodes) (fromRight names) (fromRight nodes))
-  | otherwise = Left (parseErrors)
-
-extractParseError :: Either ParseError a -> String
-extractParseError parse
-  | isLeft parse = show (fromLeft parse)
-  | otherwise = ""
+import Data.Either.Unwrap 
 
 --------------------------------------------------------
 
@@ -150,7 +94,7 @@ readNCBITaxDumpNodes :: String -> IO (Either ParseError [TaxDumpNode])
 readNCBITaxDumpNodes filePath = parseFromFile genParserNCBITaxDumpNodes filePath
 
 -- | Parse the input as NCBITaxDump datatype
---readNCBITaxonomyDatabaseDump :: String -> GenParser Char st (Either [ParseError] NCBITaxDump)
+readNCBITaxonomyDatabaseDump :: String -> IO (Either [[Char]] NCBITaxDump)
 readNCBITaxonomyDatabaseDump folder = do
   citations <- readNCBITaxDumpCitations (folder ++ "citations.dmp")
   let citationsError = extractParseError citations
@@ -373,6 +317,61 @@ genParserNCBITaxDumpNode = do
   char ('\n')
   return $ TaxDumpNode (readInt taxId) (readInt parentTaxId) rank emblCode divisionId (readBool inheritedDivFlag) geneticCodeId (readBool inheritedGCFlag) mitochondrialGeneticCodeId (readBool inheritedMGCFlag) (readBool genBankHiddenFlag) (readBool hiddenSubtreeRootFlag) comments
 
+--Auxiliary functions
+readDouble :: String -> Double
+readDouble = read              
+
+readInt :: String -> Int
+readInt = read
+
+readBool :: String -> Bool
+readBool "0" = False
+readBool "1" = True
+
+genParserTaxIdList :: GenParser Char st Int
+genParserTaxIdList = do
+  optional (char ' ')
+  taxId <- many1 digit
+  optional (char ' ')
+  return $ (readInt taxId)
+
+genParserTaxURL :: GenParser Char st (Maybe String)
+genParserTaxURL = do
+  tab 
+  url1 <- optionMaybe (many1 (noneOf "\t"))
+  tab
+  url2 <- optionMaybe (many1 (noneOf ("|")))
+  return $ (concatenateURLParts url1 url2)
+
+concatenateURLParts :: Maybe String -> Maybe String -> Maybe String
+concatenateURLParts url1 url2 
+  | (isJust url1) && (isJust url2) = maybeStringConcat url1 url2
+  | (isJust url1) && (isNothing url2) = url1
+  | otherwise = Nothing 
+
+maybeStringConcat :: Maybe String -> Maybe String -> Maybe String
+maybeStringConcat = liftM2 (++)
+
+readEncodedFile encoding name = do 
+  handle <- openFile name ReadMode
+  hSetEncoding handle encoding
+  hGetContents handle
+
+parseFromFileEncISO88591 :: Parser a -> String -> IO (Either ParseError a)
+parseFromFileEncISO88591 parser fname = do 
+         input <- readEncodedFile latin1 fname
+         return (runP parser () fname input)
+
+-- | check a list of parsing results for presence of Left aka Parse error
+checkParsing :: [[Char]] -> Either ParseError [TaxDumpCitation] -> Either ParseError [TaxDumpDelNode] -> Either ParseError [TaxDumpDivision] -> Either ParseError [TaxDumpGenCode] -> Either ParseError [TaxDumpMergedNode] -> Either ParseError [TaxDumpName] -> Either ParseError [TaxDumpNode]-> Either [[Char]] NCBITaxDump
+checkParsing parseErrors citations delNodes divisons genCodes mergedNodes names nodes
+  | join (parseErrors) == "" = Right (NCBITaxDump (fromRight citations) (fromRight delNodes) (fromRight divisons) (fromRight genCodes) (fromRight mergedNodes) (fromRight names) (fromRight nodes))
+  | otherwise = Left (parseErrors)
+
+extractParseError :: Either ParseError a -> String
+extractParseError parse
+  | isLeft parse = show (fromLeft parse)
+  | otherwise = ""
 
 
 --parent
