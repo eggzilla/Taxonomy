@@ -32,8 +32,8 @@ library
   exposed-modules:   Bio.TaxonomyData, Bio.Taxonomy 
  
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.5 && <5, parsec
-  
+  build-depends:       base >=4.5 && <5, parsec, containers, either-unwrap
+
   -- Directories containing source files.
   hs-source-dirs:      src
   

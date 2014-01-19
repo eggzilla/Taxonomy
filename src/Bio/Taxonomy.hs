@@ -16,7 +16,8 @@ module Bio.Taxonomy (
                        readNCBITaxDumpNames,
                        parseNCBITaxDumpNodes,
                        readNCBITaxDumpNodes,
-                       readNCBITaxonomyDatabaseDump
+                       readNCBITaxonomyDatabaseDump,
+                       constructTaxTree
                       ) where
 import Prelude 
 import System.IO 
@@ -218,7 +219,7 @@ genParserNCBITaxDumpGenCode = do
   tab
   char ('|')
   tab
-  name <- many1 (noneOf ("\t"))
+  genCodeName <- many1 (noneOf ("\t"))
   tab
   char ('|')
   tab
@@ -230,7 +231,7 @@ genParserNCBITaxDumpGenCode = do
   tab
   char ('|')
   char ('\n')
-  return $ TaxDumpGenCode (readInt geneticCodeId) abbreviation name cde starts
+  return $ TaxDumpGenCode (readInt geneticCodeId) abbreviation genCodeName cde starts
 
 genParserNCBITaxDumpMergedNode :: GenParser Char st TaxDumpMergedNode
 genParserNCBITaxDumpMergedNode = do

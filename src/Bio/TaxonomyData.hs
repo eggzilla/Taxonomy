@@ -85,7 +85,7 @@ data TaxDumpGenCode = TaxDumpGenCode
    -- genetic code name abbreviation
    abbreviation :: Maybe String,
    -- genetic code name
-   name :: String,
+   geneCodeName :: String,
    -- translation table for this genetic code
    cde :: String,
    -- start codons for this genetic code
