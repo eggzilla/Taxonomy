@@ -34,17 +34,21 @@ import Data.Either
 import Data.Either.Unwrap 
 
 --------------------------------------------------------
+--data TaxTree = TaxLeaf TaxDumpNode | TaxNode TaxDumpNode [TaxTree] deriving (Eq,Read,Show)
 
-constructTaxTree :: [TaxDumpNode] -> Tree TaxDumpNode 
-constructTaxTree (node:nodes) = Node node (childelements (taxId node) nodes)
+constructTaxTree :: [TaxDumpNode] -> Tree TaxDumpNode
+constructTaxTree (node:nodes) = Node node (concat (childelements (taxId node) nodes))
 
-childelements :: Int -> [TaxDumpNode] -> [Tree TaxDumpNode]
+childelements :: Int -> [TaxDumpNode] -> [[Tree TaxDumpNode]]
 childelements currentTaxId nodes = do
   let (childElements, remainingElements) = partition (\x -> parentTaxId x == currentTaxId) nodes
   let subtreeLists = map (\x -> (x:remainingElements)) childElements
-  let subtreeSeeds = map constructTaxTree subtreeLists
-  return $ (head subtreeSeeds)                                  
+  let subtrees = constructSubTrees subtreeLists
+  return subtrees
          
+constructSubTrees :: [[TaxDumpNode]] -> [Tree TaxDumpNode]
+constructSubTrees subtreeLists =  map constructTaxTree subtreeLists
+
 -- | parse NCBITaxDumpCitations from input string
 parseNCBITaxDumpCitations input = parse genParserNCBITaxDumpCitations "parseTaxDumpCitations" input
 

@@ -4,8 +4,6 @@
 module Bio.TaxonomyData where
 import Data.Tree
 
---constructSimpleTaxonomyTree :: [TaxDumpNode] -> [TaxDumpName] -> SimpleTaxonomyTree
-
 -- | 
 data SimpleTaxonomyEntry = SimpleTaxonomyEntry 
  {
@@ -18,7 +16,7 @@ data SimpleTaxonomyEntry = SimpleTaxonomyEntry
    -- 
    entryGenomeAccession :: Maybe String
  }
- deriving (Show, Eq)
+ deriving (Show, Read, Eq)
 
 
 -- | NCBI Taxonomy database dump hierachichal data structure
@@ -33,7 +31,7 @@ data NCBITaxDump = NCBITaxDump
     taxDumpNames :: [TaxDumpName],
     taxDumpNodes :: [TaxDumpNode]
   }
-  deriving (Show, Eq)
+  deriving (Show, Read, Eq)
 
 data TaxDumpCitation = TaxDumpCitation
   {
@@ -57,14 +55,14 @@ data TaxDumpCitation = TaxDumpCitation
    -- list of node ids separated by a single space
    taxIdList :: Maybe [Int]
   }
-  deriving (Show, Eq)
+  deriving (Show, Read, Eq)
 
 data TaxDumpDelNode = TaxDumpDelNode
   {
    -- deleted node id
    delTaxId :: Int
   }
-  deriving (Show, Eq)
+  deriving (Show, Read, Eq)
 
 data TaxDumpDivision = TaxDumpDivision
   {
@@ -76,7 +74,7 @@ data TaxDumpDivision = TaxDumpDivision
    divisonName :: String,
    divisionComments :: Maybe String
   }
-  deriving (Show, Eq)
+  deriving (Show, Read, Eq)
 
 data TaxDumpGenCode = TaxDumpGenCode
   {
@@ -91,7 +89,7 @@ data TaxDumpGenCode = TaxDumpGenCode
    -- start codons for this genetic code
    starts :: String
   }
-  deriving (Show, Eq)
+  deriving (Show, Read, Eq)
 
 data TaxDumpMergedNode = TaxDumpMergedNode
   {
@@ -100,7 +98,7 @@ data TaxDumpMergedNode = TaxDumpMergedNode
    -- id of nodes which is result of merging
    newTaxId :: Int
   }
-  deriving (Show, Eq)
+  deriving (Show, Read, Eq)
 
 data TaxDumpName = TaxDumpName
   {
@@ -113,7 +111,7 @@ data TaxDumpName = TaxDumpName
    -- (synonym, common name, ...)
    nameClass :: String
   }
-  deriving (Show, Eq)
+  deriving (Show, Read, Eq)
 
 data TaxDumpNode = TaxDumpNode
   {
@@ -144,4 +142,4 @@ data TaxDumpNode = TaxDumpNode
    -- free-text comments and citations
    nodeComments :: Maybe String
   }
-  deriving (Show, Eq)
+  deriving (Show, Read, Eq)
