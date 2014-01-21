@@ -320,7 +320,7 @@ genParserNCBITaxDumpNode = do
   tab
   char ('|')
   char ('\n')
-  return $ TaxDumpNode (readInt taxId) (readInt parentTaxId) rank emblCode divisionId (readBool inheritedDivFlag) geneticCodeId (readBool inheritedGCFlag) mitochondrialGeneticCodeId (readBool inheritedMGCFlag) (readBool genBankHiddenFlag) (readBool hiddenSubtreeRootFlag) comments
+  return $ TaxDumpNode (readInt taxId) (readInt parentTaxId) (readRank rank) emblCode divisionId (readBool inheritedDivFlag) geneticCodeId (readBool inheritedGCFlag) mitochondrialGeneticCodeId (readBool inheritedMGCFlag) (readBool genBankHiddenFlag) (readBool hiddenSubtreeRootFlag) comments
 
 --Auxiliary functions
 readDouble :: String -> Double
@@ -332,6 +332,9 @@ readInt = read
 readBool :: String -> Bool
 readBool "0" = False
 readBool "1" = True
+
+readRank :: String -> Rank
+readRank a = read  a :: Rank
 
 genParserTaxIdList :: GenParser Char st Int
 genParserTaxIdList = do
@@ -377,19 +380,3 @@ extractParseError :: Either ParseError a -> String
 extractParseError parse
   | isLeft parse = show (fromLeft parse)
   | otherwise = ""
-
-
---parent
---returns the parent or Nothing
-
---childen
---returns direct children of this node
-
---allchildren
---returns all children of this node
-
---sequenced children
---returns all nodes with avialable genomes
-
---parent_rank
---returns the parent with the specified rank or Nothing

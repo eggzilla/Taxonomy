@@ -18,7 +18,6 @@ data SimpleTaxonomyEntry = SimpleTaxonomyEntry
  }
  deriving (Show, Read, Eq)
 
-
 -- | NCBI Taxonomy database dump hierachichal data structure
 -- as defined in ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump_readme.txt
 data NCBITaxDump = NCBITaxDump
@@ -113,6 +112,57 @@ data TaxDumpName = TaxDumpName
   }
   deriving (Show, Read, Eq)
 
+-- | Taxonomic ranks: NCBI uses the uncommon Speciessubgroup 
+data Rank = Domain | Superkingdom | Kingdom | Subkingdom | Infrakingdom | Superphylum | Phylum | Subphylum | Infraphylum | Microphylum | Superclass | Class | Subclass| Infraclass | Parvclass | Legion | Cohort | Magnorder | Superorder | Order | Suborder | Infraorder | Parvorder | Superfamily | Family | Subfamily | Supertribe | Tribe | Subtribe | Genus | Subgenus | Section | Series | Superspecies | Speciesgroup | Species | Speciessubgroup | Subspecies | Infraspecies | Variety | Form | Norank deriving (Eq, Ord, Show, Bounded, Enum)
+
+instance Read Rank where
+  readsPrec _ input = readsRank input
+
+readsRank input -- = [(Domain x)| x <- reads input ]
+   | input == "domain" = [(Domain,"")]
+   | input == "superkingdom" = [(Superkingdom,"")]
+   | input == "kingdom" = [(Kingdom,"")]
+   | input == "subkingdom"  = [(Subkingdom,"")]
+   | input == "infrakingdom" = [(Infrakingdom,"")]
+   | input == "superphylum" = [(Superphylum,"")]
+   | input == "phylum" = [(Phylum,"")]
+   | input == "subphylum" = [(Subphylum,"")]
+   | input == "infraphylum" = [(Infraphylum,"")]
+   | input == "microphylum" = [(Microphylum,"")]
+   | input == "superclass" = [(Superclass,"")]
+   | input == "class" = [(Class,"")]
+   | input == "subclass" = [(Subclass,"")]
+   | input == "infraclass" = [(Infraclass,"")]
+   | input == "parvclass " = [(Parvclass ,"")] 
+   | input == "legion" = [(Legion,"")] 
+   | input == "cohort" = [(Cohort,"")] 
+   | input == "magnorder " = [(Magnorder ,"")] 
+   | input == "superorder" = [(Superorder,"")] 
+   | input == "order" = [(Order,"")]
+   | input == "suborder" = [(Suborder,"")]
+   | input == "infraorder" = [(Infraorder,"")] 
+   | input == "parvorder" = [(Parvorder,"")] 
+   | input == "superfamily" = [(Superfamily,"")]
+   | input == "family" = [(Family,"")]
+   | input == "subfamily" = [(Subfamily,"")]
+   | input == "supertribe" = [(Supertribe,"")]
+   | input == "tribe" = [(Tribe,"")] 
+   | input == "subtribe" = [(Subtribe,"")] 
+   | input == "genus" = [(Genus,"")]
+   | input == "subgenus" = [(Subgenus,"")] 
+   | input == "section" = [(Section,"")] 
+   | input == "series" = [(Series,"")] 
+   | input == "superspecies" = [(Superspecies,"")] 
+   | input == "species group" = [(Speciesgroup,"")]
+   | input == "species" = [(Species,"")]
+   | input == "species subgroup" = [(Speciessubgroup,"")]
+   | input == "subspecies" = [(Subspecies,"")] 
+   | input == "infraspecies" = [(Infraspecies,"")]
+   | input == "varietas" = [(Variety,"")]
+   | input == "forma" = [(Form,"")]
+   | input == "no rank" = [(Norank,"")]
+   | otherwise = [(Norank,"")]  
+
 data TaxDumpNode = TaxDumpNode
   {
    -- node id in GenBank
@@ -120,7 +170,7 @@ data TaxDumpNode = TaxDumpNode
    -- parent node id in GenBank taxonomy database
    parentTaxId :: Int,
    -- rank of this node (superkingdom, kingdom, ...) 
-   rank :: String,
+   rank :: Rank,
    -- locus-name prefix; not unique
    emblCode :: Maybe String,
    -- see division.dmp file
