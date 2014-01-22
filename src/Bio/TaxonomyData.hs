@@ -113,8 +113,8 @@ data TaxDumpName = TaxDumpName
   deriving (Show, Read, Eq)
 
 -- | Taxonomic ranks: NCBI uses the uncommon Speciessubgroup 
-data Rank = Domain | Superkingdom | Kingdom | Subkingdom | Infrakingdom | Superphylum | Phylum | Subphylum | Infraphylum | Microphylum | Superclass | Class | Subclass| Infraclass | Parvclass | Legion | Cohort | Magnorder | Superorder | Order | Suborder | Infraorder | Parvorder | Superfamily | Family | Subfamily | Supertribe | Tribe | Subtribe | Genus | Subgenus | Section | Series | Superspecies | Speciesgroup | Species | Speciessubgroup | Subspecies | Infraspecies | Variety | Form | Norank deriving (Eq, Ord, Show, Bounded, Enum)
-
+data Rank = Norank | Form | Variety | Infraspecies | Subspecies | Speciessubgroup | Species | Speciesgroup | Superspecies | Series | Section | Subgenus | Genus | Subtribe | Tribe | Supertribe | Subfamily | Family | Superfamily | Parvorder | Infraorder | Suborder | Order | Superorder | Magnorder | Cohort | Legion | Parvclass | Infraclass | Subclass | Class | Superclass | Microphylum | Infraphylum | Subphylum | Phylum | Superphylum | Infrakingdom | Subkingdom | Kingdom | Superkingdom | Domain deriving (Eq, Ord, Show, Bounded, Enum)
+          
 instance Read Rank where
   readsPrec _ input = readsRank input
 
