@@ -37,10 +37,10 @@ import Data.Either.Unwrap
 --data TaxTree = TaxLeaf TaxDumpNode | TaxNode TaxDumpNode [TaxTree] deriving (Eq,Read,Show)
 
 constructTaxTree :: [TaxDumpNode] -> Tree TaxDumpNode
-constructTaxTree (node:nodes) = Node node (concat (childelements (taxId node) nodes))
+constructTaxTree (node:nodes) = Node node (concat (addChildElements (taxId node) nodes))
 
-childelements :: Int -> [TaxDumpNode] -> [[Tree TaxDumpNode]]
-childelements currentTaxId nodes = do
+addChildElements :: Int -> [TaxDumpNode] -> [[Tree TaxDumpNode]]
+addChildElements currentTaxId nodes = do
   let (childElements, remainingElements) = partition (\x -> parentTaxId x == currentTaxId) nodes
   let subtreeLists = map (\x -> (x:remainingElements)) childElements
   let subtrees = constructSubTrees subtreeLists
