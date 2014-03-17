@@ -18,6 +18,17 @@ data SimpleTaxonomyEntry = SimpleTaxonomyEntry
  }
  deriving (Show, Read, Eq)
 
+data SimpleTaxDumpNode = TaxDumpNode
+  {
+   -- node id in GenBank
+   taxId :: Int,
+   -- parent node id in GenBank taxonomy database
+   parentTaxId :: Int,
+   -- rank of this node (superkingdom, kingdom, ...) 
+   rank :: Rank
+  }
+  deriving (Show, Read, Eq)
+
 -- | NCBI Taxonomy database dump hierachichal data structure
 -- as defined in ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump_readme.txt
 data NCBITaxDump = NCBITaxDump

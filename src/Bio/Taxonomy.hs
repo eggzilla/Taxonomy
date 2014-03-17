@@ -266,6 +266,62 @@ genParserNCBITaxDumpName = do
   nameClass <- many1 (noneOf ("\t"))
   return $ TaxDumpName (readInt taxId) nameTxt uniqueName nameClass
 
+genParserNCBISimpleTaxDumpNode :: GenParser Char st SimpleTaxDumpNode
+genParserNCBISimpleTaxDumpNode = do
+  taxId <- many1 digit
+  tab
+  char ('|') 
+  tab
+  parentTaxId <- many1 digit
+  tab
+  char ('|')
+  tab
+  rank <- many1 (noneOf "\t")
+  tab
+  char ('|')
+  tab 
+  optionMaybe (many1 (noneOf "\t"))
+  tab
+  char ('|')
+  tab
+  many1 digit
+  tab
+  char ('|')
+  tab
+  many1 digit
+  tab
+  char ('|')
+  tab 
+  many1 digit
+  tab
+  char ('|')
+  tab
+  many1 digit
+  tab
+  char ('|')
+  tab
+  many1 digit
+  tab
+  char ('|')
+  tab
+  many1 digit
+  tab
+  char ('|')
+  tab
+  many1 digit
+  tab
+  char ('|')
+  tab
+  many1 digit 
+  tab
+  char ('|')
+  tab
+  optionMaybe (many1 (noneOf "\t"))
+  tab
+  char ('|')
+  char ('\n')
+  return $ SimpleTaxDumpNode (readInt taxId) (readInt parentTaxId) (readRank rank) 
+
 genParserNCBITaxDumpNode :: GenParser Char st TaxDumpNode
 genParserNCBITaxDumpNode = do
   taxId <- many1 digit
