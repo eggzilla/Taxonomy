@@ -16,6 +16,8 @@ module Bio.Taxonomy (
                        readNCBITaxDumpNames,
                        parseNCBITaxDumpNodes,
                        readNCBITaxDumpNodes,
+                       parseNCBISimpleTaxDumpNodes,
+                       readNCBISimpleTaxDumpNodes,
                        readNCBITaxonomyDatabaseDump,
                        constructTaxTree
                       ) where
