@@ -268,15 +268,15 @@ genParserNCBITaxDumpName = do
 
 genParserNCBISimpleTaxDumpNode :: GenParser Char st SimpleTaxDumpNode
 genParserNCBISimpleTaxDumpNode = do
-  taxId <- many1 digit
+  simpleTaxId <- many1 digit
   tab
   char ('|') 
   tab
-  parentTaxId <- many1 digit
+  simpleParentTaxId <- many1 digit
   tab
   char ('|')
   tab
-  rank <- many1 (noneOf "\t")
+  simpleRank <- many1 (noneOf "\t")
   tab
   char ('|')
   tab 
@@ -320,7 +320,7 @@ genParserNCBISimpleTaxDumpNode = do
   tab
   char ('|')
   char ('\n')
-  return $ SimpleTaxDumpNode (readInt taxId) (readInt parentTaxId) (readRank rank) 
+  return $ SimpleTaxDumpNode (readInt simpleTaxId) (readInt simpleParentTaxId) (readRank simpleRank) 
 
 genParserNCBITaxDumpNode :: GenParser Char st TaxDumpNode
 genParserNCBITaxDumpNode = do

@@ -4,28 +4,14 @@
 module Bio.TaxonomyData where
 import Data.Tree
 
--- | 
-data SimpleTaxonomyEntry = SimpleTaxonomyEntry 
- {
-  -- node id in GenBank
-   entryId :: Int,
-   -- rank of this node (superkingdom, kingdom, ...) 
-   entryRank :: String,
-   -- locus-name prefix; not unique
-   entryName :: String,
-   -- 
-   entryGenomeAccession :: Maybe String
- }
- deriving (Show, Read, Eq)
-
-data SimpleTaxDumpNode = TaxDumpNode
+data SimpleTaxDumpNode = SimpleTaxDumpNode
   {
    -- node id in GenBank
-   taxId :: Int,
+   simpleTaxId :: Int,
    -- parent node id in GenBank taxonomy database
-   parentTaxId :: Int,
+   simpleParentTaxId :: Int,
    -- rank of this node (superkingdom, kingdom, ...) 
-   rank :: Rank
+   simpleRank :: Rank
   }
   deriving (Show, Read, Eq)
 
