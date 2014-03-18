@@ -19,7 +19,8 @@ module Bio.Taxonomy (
                        parseNCBISimpleTaxDumpNodes,
                        readNCBISimpleTaxDumpNodes,
                        readNCBITaxonomyDatabaseDump,
-                       constructTaxTree
+                       constructTaxTree,
+                       constructSimpleTaxTree
                       ) where
 import Prelude 
 import System.IO 
@@ -37,6 +38,20 @@ import Data.Either.Unwrap
 
 --------------------------------------------------------
 --data TaxTree = TaxLeaf TaxDumpNode | TaxNode TaxDumpNode [TaxTree] deriving (Eq,Read,Show)
+
+
+constructSimpleTaxTree :: [SimpleTaxDumpNode] -> Tree SimpleTaxDumpNode
+constructSimpleTaxTree (node:nodes) = Node node (concat (addSimpleChildElements (simpleTaxId node) nodes))
+
+addSimpleChildElements :: Int -> [SimpleTaxDumpNode] -> [[Tree SimpleTaxDumpNode]]
+addSimpleChildElements currentTaxId nodes = do
+  let (childElements, remainingElements) = partition (\x -> simpleParentTaxId x == currentTaxId) nodes
+  let subtreeLists = map (\x -> (x:remainingElements)) childElements
+  let subtrees = constructSimpleSubTrees subtreeLists
+  return subtrees
+         
+constructSimpleSubTrees :: [[SimpleTaxDumpNode]] -> [Tree SimpleTaxDumpNode]
+constructSimpleSubTrees subtreeLists =  map constructSimpleTaxTree subtreeLists
 
 constructTaxTree :: [TaxDumpNode] -> Tree TaxDumpNode
 constructTaxTree (node:nodes) = Node node (concat (addChildElements (taxId node) nodes))
