@@ -98,6 +98,13 @@ parseNCBITaxDumpNodes input = parse genParserNCBITaxDumpNode "parseTaxDumpNode" 
 readNCBITaxDumpNodes :: String -> IO (Either ParseError [TaxDumpNode])  
 readNCBITaxDumpNodes filePath = parseFromFile genParserNCBITaxDumpNodes filePath
 
+-- | parse NCBISimpleTaxDumpNames from input string
+parseNCBISimpleTaxDumpNodes input = parse genParserNCBISimpleTaxDumpNode "parseSimpleTaxDumpNode" input
+
+-- | parse NCBITaxDumpCitations from input filePath                      
+readNCBISimpleTaxDumpNodes :: String -> IO (Either ParseError [SimpleTaxDumpNode])  
+readNCBISimpleTaxDumpNodes filePath = parseFromFile genParserNCBISimpleTaxDumpNodes filePath
+
 -- | Parse the input as NCBITaxDump datatype
 readNCBITaxonomyDatabaseDump :: String -> IO (Either [[Char]] NCBITaxDump)
 readNCBITaxonomyDatabaseDump folder = do
@@ -153,6 +160,10 @@ genParserNCBITaxDumpNodes = do
   nodes <- many1 genParserNCBITaxDumpNode
   return $ nodes
 
+genParserNCBISimpleTaxDumpNodes :: GenParser Char st [SimpleTaxDumpNode]
+genParserNCBISimpleTaxDumpNodes = do
+  nodes <- many1 genParserNCBISimpleTaxDumpNode
+  return $ nodes
 ----------------------------
 
 genParserNCBITaxDumpCitation :: GenParser Char st TaxDumpCitation
