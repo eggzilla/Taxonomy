@@ -5,7 +5,7 @@ name:                Taxonomy
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.0.1
+version:             1.0.0
 synopsis:            Libary for parsing and processing of taxonomy data
 description:         Libary for parsing and processing of taxonomy data
                      
@@ -24,8 +24,8 @@ source-repository head
 
 source-repository this
   type:     git
-  location: https://github.com/eggzilla/Taxonomy/tree/v0.0.1
-  tag:      v0.0.1
+  location: https://github.com/eggzilla/Taxonomy/tree/v1.0.0
+  tag:      v1.0.0
 
 library
   -- Modules exported by the library.
