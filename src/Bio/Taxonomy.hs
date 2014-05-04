@@ -34,7 +34,7 @@ import Control.Monad
 import Data.Tree
 import Data.List
 import Data.Either
-import Data.Either.Unwrap 
+import qualified Data.Either.Unwrap as E
 
 --------------------------------------------------------
 --data TaxTree = TaxLeaf TaxDumpNode | TaxNode TaxDumpNode [TaxTree] deriving (Eq,Read,Show)
@@ -457,10 +457,10 @@ parseFromFileEncISO88591 parser fname = do
 -- | check a list of parsing results for presence of Left aka Parse error
 checkParsing :: [[Char]] -> Either ParseError [TaxDumpCitation] -> Either ParseError [TaxDumpDelNode] -> Either ParseError [TaxDumpDivision] -> Either ParseError [TaxDumpGenCode] -> Either ParseError [TaxDumpMergedNode] -> Either ParseError [TaxDumpName] -> Either ParseError [TaxDumpNode]-> Either [[Char]] NCBITaxDump
 checkParsing parseErrors citations delNodes divisons genCodes mergedNodes names nodes
-  | join (parseErrors) == "" = Right (NCBITaxDump (fromRight citations) (fromRight delNodes) (fromRight divisons) (fromRight genCodes) (fromRight mergedNodes) (fromRight names) (fromRight nodes))
+  | join (parseErrors) == "" = Right (NCBITaxDump (E.fromRight citations) (E.fromRight delNodes) (E.fromRight divisons) (E.fromRight genCodes) (E.fromRight mergedNodes) (E.fromRight names) (E.fromRight nodes))
   | otherwise = Left (parseErrors)
 
 extractParseError :: Either ParseError a -> String
 extractParseError parse
-  | isLeft parse = show (fromLeft parse)
+  | isLeft parse = show (E.fromLeft parse)
   | otherwise = ""
