@@ -26,22 +26,21 @@ import Prelude
 import System.IO 
 import Text.Parsec.Prim
 import Bio.TaxonomyData
-import Data.Maybe
 import Text.ParserCombinators.Parsec
-import Text.ParserCombinators.Parsec.Token
-import Text.ParserCombinators.Parsec.Language (emptyDef)    
+--import Text.ParserCombinators.Parsec.Token
+--import Text.ParserCombinators.Parsec.Language (emptyDef)    
 import Control.Monad
 import Data.Tree
 import Data.List
+import Data.Maybe    
 import Data.Either
 import qualified Data.Either.Unwrap as E
 
 --------------------------------------------------------
---data TaxTree = TaxLeaf TaxDumpNode | TaxNode TaxDumpNode [TaxTree] deriving (Eq,Read,Show)
-
 
 constructSimpleTaxTree :: [SimpleTaxDumpNode] -> Tree SimpleTaxDumpNode
 constructSimpleTaxTree (node:nodes) = Node node (concat (addSimpleChildElements (simpleTaxId node) nodes))
+              
 
 addSimpleChildElements :: Int -> [SimpleTaxDumpNode] -> [[Tree SimpleTaxDumpNode]]
 addSimpleChildElements currentTaxId nodes = do
@@ -67,6 +66,7 @@ constructSubTrees :: [[TaxDumpNode]] -> [Tree TaxDumpNode]
 constructSubTrees subtreeLists =  map constructTaxTree subtreeLists
 
 -- | parse NCBITaxDumpCitations from input string
+parseNCBITaxDumpCitations :: [Char] -> Either ParseError [TaxDumpCitation]
 parseNCBITaxDumpCitations input = parse genParserNCBITaxDumpCitations "parseTaxDumpCitations" input
 
 -- | parse NCBITaxDumpCitations from input filePath                      
@@ -74,6 +74,7 @@ readNCBITaxDumpCitations :: String -> IO (Either ParseError [TaxDumpCitation])
 readNCBITaxDumpCitations filePath = parseFromFileEncISO88591 genParserNCBITaxDumpCitations filePath
 
 -- | parse NCBITaxDumpDelNodes from input string
+parseNCBITaxDumpDelNodes :: [Char] -> Either ParseError [TaxDumpDelNode]
 parseNCBITaxDumpDelNodes input = parse genParserNCBITaxDumpDelNodes "parseTaxDumpDelNodes" input
 
 -- | parse NCBITaxDumpDelNodes from input filePath                      
@@ -81,6 +82,7 @@ readNCBITaxDumpDelNodes :: String -> IO (Either ParseError [TaxDumpDelNode])
 readNCBITaxDumpDelNodes filePath = parseFromFile genParserNCBITaxDumpDelNodes filePath
 
 -- | parse NCBITaxDumpDivisons from input string
+parseNCBITaxDumpDivisions :: [Char] -> Either ParseError [TaxDumpDivision]
 parseNCBITaxDumpDivisions input = parse genParserNCBITaxDumpDivisons "parseTaxDumpDivisons" input
 
 -- | parse NCBITaxDumpDivisons from input filePath                      
@@ -88,6 +90,7 @@ readNCBITaxDumpDivisions :: String -> IO (Either ParseError [TaxDumpDivision])
 readNCBITaxDumpDivisions filePath = parseFromFile genParserNCBITaxDumpDivisons filePath
 
 -- | parse NCBITaxDumpGenCodes from input string
+parseNCBITaxDumpGenCodes :: [Char] -> Either ParseError [TaxDumpGenCode]
 parseNCBITaxDumpGenCodes input = parse genParserNCBITaxDumpGenCodes "parseTaxDumpGenCodes" input
 
 -- | parse NCBITaxDumpGenCodes from input filePath                      
@@ -95,6 +98,7 @@ readNCBITaxDumpGenCodes :: String -> IO (Either ParseError [TaxDumpGenCode])
 readNCBITaxDumpGenCodes filePath = parseFromFile genParserNCBITaxDumpGenCodes filePath
 
 -- | parse NCBITaxDumpMergedNodes from input string
+parseNCBITaxDumpMergedNodes :: [Char] -> Either ParseError [TaxDumpMergedNode]
 parseNCBITaxDumpMergedNodes input = parse genParserNCBITaxDumpMergedNodes "parseTaxDumpMergedNodes" input
 
 -- | parse NCBITaxDumpMergedNodes from input filePath                      
@@ -102,6 +106,7 @@ readNCBITaxDumpMergedNodes :: String -> IO (Either ParseError [TaxDumpMergedNode
 readNCBITaxDumpMergedNodes filePath = parseFromFile genParserNCBITaxDumpMergedNodes filePath
 
 -- | parse NCBITaxDumpNames from input string
+parseNCBITaxDumpNames :: [Char] -> Either ParseError [TaxDumpName]
 parseNCBITaxDumpNames input = parse genParserNCBITaxDumpNames "parseTaxDumpNames" input
 
 -- | parse NCBITaxDumpNames from input filePath                      
@@ -109,6 +114,7 @@ readNCBITaxDumpNames :: String -> IO (Either ParseError [TaxDumpName])
 readNCBITaxDumpNames filePath = parseFromFile genParserNCBITaxDumpNames filePath
 
 -- | parse NCBITaxDumpNames from input string
+parseNCBITaxDumpNodes :: [Char] -> Either ParseError TaxDumpNode
 parseNCBITaxDumpNodes input = parse genParserNCBITaxDumpNode "parseTaxDumpNode" input
 
 -- | parse NCBITaxDumpCitations from input filePath                      
@@ -116,6 +122,7 @@ readNCBITaxDumpNodes :: String -> IO (Either ParseError [TaxDumpNode])
 readNCBITaxDumpNodes filePath = parseFromFile genParserNCBITaxDumpNodes filePath
 
 -- | parse NCBISimpleTaxDumpNames from input string
+parseNCBISimpleTaxDumpNodes :: [Char] -> Either ParseError SimpleTaxDumpNode
 parseNCBISimpleTaxDumpNodes input = parse genParserNCBISimpleTaxDumpNode "parseSimpleTaxDumpNode" input
 
 -- | parse NCBITaxDumpCitations from input filePath                      
@@ -185,33 +192,33 @@ genParserNCBISimpleTaxDumpNodes = do
 
 genParserNCBITaxDumpCitation :: GenParser Char st TaxDumpCitation
 genParserNCBITaxDumpCitation = do
-  citId <- many1 digit
+  _citId <- many1 digit
   tab
   char ('|')
   tab 
-  citKey <- optionMaybe (many1 (noneOf "\t"))
+  _citKey <- optionMaybe (many1 (noneOf "\t"))
   tab
   char ('|')
   tab 
-  pubmedId <- optionMaybe (many1 digit)
+  _pubmedId <- optionMaybe (many1 digit)
   tab
   char ('|')
   tab  
-  medlineId <- optionMaybe (many1 digit)
+  _medlineId <- optionMaybe (many1 digit)
   tab
   char ('|') 
-  url <- genParserTaxURL
+  _url <- genParserTaxURL
   char ('|')
   tab
-  text <- optionMaybe (many1 (noneOf "\t"))
+  _text <- optionMaybe (many1 (noneOf "\t"))
   tab
   char ('|')
   tab
-  taxIdList <- optionMaybe (many1 genParserTaxIdList)
+  _taxIdList <- optionMaybe (many1 genParserTaxIdList)
   tab
   char ('|')
   char ('\n')
-  return $ TaxDumpCitation (readInt citId) citKey (liftM readInt pubmedId) (liftM readInt medlineId) url text taxIdList
+  return $ TaxDumpCitation (readInt _citId) _citKey (liftM readInt _pubmedId) (liftM readInt _medlineId) _url _text _taxIdList
 
 genParserNCBITaxDumpDelNode :: GenParser Char st TaxDumpDelNode
 genParserNCBITaxDumpDelNode = do
@@ -223,88 +230,88 @@ genParserNCBITaxDumpDelNode = do
   
 genParserNCBITaxDumpDivision :: GenParser Char st TaxDumpDivision
 genParserNCBITaxDumpDivision = do
-  divisionId <- many1 digit
+  _divisionId <- many1 digit
   tab
   char ('|')
   tab
-  divisionCDE <- many1 upper
+  _divisionCDE <- many1 upper
   tab
   char ('|')
   tab
-  divisionName <- many1 (noneOf ("\t"))
+  _divisionName <- many1 (noneOf ("\t"))
   tab
   char ('|')
   tab
-  comments <- optionMaybe (many1 (noneOf ("\t")))
+  _comments <- optionMaybe (many1 (noneOf ("\t")))
   tab
   char ('|')
   char ('\n')
-  return $ TaxDumpDivision (readInt divisionId) divisionCDE divisionName comments 
+  return $ TaxDumpDivision (readInt _divisionId) _divisionCDE _divisionName _comments 
 
 genParserNCBITaxDumpGenCode :: GenParser Char st TaxDumpGenCode
 genParserNCBITaxDumpGenCode = do
-  geneticCodeId <- many1 digit 
+  _geneticCodeId <- many1 digit 
   tab
   char ('|')
   tab
-  abbreviation <- optionMaybe (many1 (noneOf ("\t")))
+  _abbreviation <- optionMaybe (many1 (noneOf ("\t")))
   tab
   char ('|')
   tab
-  genCodeName <- many1 (noneOf ("\t"))
+  _genCodeName <- many1 (noneOf ("\t"))
   tab
   char ('|')
   tab
-  cde <- many1 (noneOf ("\t"))
+  _cde <- many1 (noneOf ("\t"))
   tab
   char ('|')
   tab
-  starts <- many1 (noneOf ("\t"))
+  _starts <- many1 (noneOf ("\t"))
   tab
   char ('|')
   char ('\n')
-  return $ TaxDumpGenCode (readInt geneticCodeId) abbreviation genCodeName cde starts
+  return $ TaxDumpGenCode (readInt _geneticCodeId) _abbreviation _genCodeName _cde _starts
 
 genParserNCBITaxDumpMergedNode :: GenParser Char st TaxDumpMergedNode
 genParserNCBITaxDumpMergedNode = do
-  oldTaxId <- many1 digit
+  _oldTaxId <- many1 digit
   tab
   char ('|')
   tab  
-  newTaxId <- many1 digit
+  _newTaxId <- many1 digit
   tab
   char ('|')
   char ('\n')
-  return $ TaxDumpMergedNode (readInt oldTaxId) (readInt newTaxId)
+  return $ TaxDumpMergedNode (readInt _oldTaxId) (readInt _newTaxId)
 
 genParserNCBITaxDumpName :: GenParser Char st TaxDumpName
 genParserNCBITaxDumpName = do
-  taxId <- many1 digit
+  _taxId <- many1 digit
   tab
   char ('|')
   tab
-  nameTxt <- many1 (noneOf ("\t"))
+  _nameTxt <- many1 (noneOf ("\t"))
   tab
   char ('|')
   tab
-  uniqueName <- optionMaybe (many1 (noneOf "\t"))
+  _uniqueName <- optionMaybe (many1 (noneOf "\t"))
   tab
   char ('|')
   tab
-  nameClass <- many1 (noneOf ("\t"))
-  return $ TaxDumpName (readInt taxId) nameTxt uniqueName nameClass
+  _nameClass <- many1 (noneOf ("\t"))
+  return $ TaxDumpName (readInt _taxId) _nameTxt _uniqueName _nameClass
 
 genParserNCBISimpleTaxDumpNode :: GenParser Char st SimpleTaxDumpNode
 genParserNCBISimpleTaxDumpNode = do
-  simpleTaxId <- many1 digit
+  _simpleTaxId <- many1 digit
   tab
   char ('|') 
   tab
-  simpleParentTaxId <- many1 digit
+  _simpleParentTaxId <- many1 digit
   tab
   char ('|')
   tab
-  simpleRank <- many1 (noneOf "\t")
+  _simpleRank <- many1 (noneOf "\t")
   tab
   char ('|')
   tab 
@@ -348,74 +355,72 @@ genParserNCBISimpleTaxDumpNode = do
   tab
   char ('|')
   char ('\n')
-  return $ SimpleTaxDumpNode (readInt simpleTaxId) (readInt simpleParentTaxId) (readRank simpleRank) 
+  return $ SimpleTaxDumpNode (readInt _simpleTaxId) (readInt _simpleParentTaxId) (readRank _simpleRank) 
 
 genParserNCBITaxDumpNode :: GenParser Char st TaxDumpNode
 genParserNCBITaxDumpNode = do
-  taxId <- many1 digit
+  _taxId <- many1 digit
   tab
   char ('|') 
   tab
-  parentTaxId <- many1 digit
+  _parentTaxId <- many1 digit
   tab
   char ('|')
   tab
-  rank <- many1 (noneOf "\t")
-  tab
-  char ('|')
-  tab 
-  emblCode <- optionMaybe (many1 (noneOf "\t"))
-  tab
-  char ('|')
-  tab
-  divisionId <- many1 digit
-  tab
-  char ('|')
-  tab
-  inheritedDivFlag <- many1 digit
+  _rank <- many1 (noneOf "\t")
   tab
   char ('|')
   tab 
-  geneticCodeId <- many1 digit
+  _emblCode <- optionMaybe (many1 (noneOf "\t"))
   tab
   char ('|')
   tab
-  inheritedGCFlag <- many1 digit
+  _divisionId <- many1 digit
   tab
   char ('|')
   tab
-  mitochondrialGeneticCodeId <- many1 digit
+  _inheritedDivFlag <- many1 digit
+  tab
+  char ('|')
+  tab 
+  _geneticCodeId <- many1 digit
   tab
   char ('|')
   tab
-  inheritedMGCFlag <- many1 digit
+  _inheritedGCFlag <- many1 digit
   tab
   char ('|')
   tab
-  genBankHiddenFlag <- many1 digit
+  _mitochondrialGeneticCodeId <- many1 digit
   tab
   char ('|')
   tab
-  hiddenSubtreeRootFlag <- many1 digit 
+  _inheritedMGCFlag <- many1 digit
   tab
   char ('|')
   tab
-  comments <- optionMaybe (many1 (noneOf "\t"))
+  _genBankHiddenFlag <- many1 digit
+  tab
+  char ('|')
+  tab
+  _hiddenSubtreeRootFlag <- many1 digit 
+  tab
+  char ('|')
+  tab
+  _comments <- optionMaybe (many1 (noneOf "\t"))
   tab
   char ('|')
   char ('\n')
-  return $ TaxDumpNode (readInt taxId) (readInt parentTaxId) (readRank rank) emblCode divisionId (readBool inheritedDivFlag) geneticCodeId (readBool inheritedGCFlag) mitochondrialGeneticCodeId (readBool inheritedMGCFlag) (readBool genBankHiddenFlag) (readBool hiddenSubtreeRootFlag) comments
+  return $ TaxDumpNode (readInt _taxId) (readInt _parentTaxId) (readRank _rank) _emblCode _divisionId (readBool _inheritedDivFlag) _geneticCodeId (readBool _inheritedGCFlag) _mitochondrialGeneticCodeId (readBool _inheritedMGCFlag) (readBool _genBankHiddenFlag) (readBool _hiddenSubtreeRootFlag) _comments
 
 --Auxiliary functions
-readDouble :: String -> Double
-readDouble = read              
-
 readInt :: String -> Int
 readInt = read
 
 readBool :: String -> Bool
 readBool "0" = False
 readBool "1" = True
+readBool _ = False               
 
 readRank :: String -> Rank
 readRank a = read  a :: Rank
@@ -423,9 +428,9 @@ readRank a = read  a :: Rank
 genParserTaxIdList :: GenParser Char st Int
 genParserTaxIdList = do
   optional (char ' ')
-  taxId <- many1 digit
+  _taxId <- many1 digit
   optional (char ' ')
-  return $ (readInt taxId)
+  return $ (readInt _taxId)
 
 genParserTaxURL :: GenParser Char st (Maybe String)
 genParserTaxURL = do
@@ -444,6 +449,7 @@ concatenateURLParts url1 url2
 maybeStringConcat :: Maybe String -> Maybe String -> Maybe String
 maybeStringConcat = liftM2 (++)
 
+readEncodedFile :: TextEncoding -> FilePath -> IO String                    
 readEncodedFile encoding name = do 
   handle <- openFile name ReadMode
   hSetEncoding handle encoding
@@ -461,6 +467,6 @@ checkParsing parseErrors citations delNodes divisons genCodes mergedNodes names 
   | otherwise = Left (parseErrors)
 
 extractParseError :: Either ParseError a -> String
-extractParseError parse
-  | isLeft parse = show (E.fromLeft parse)
+extractParseError _parse
+  | isLeft _parse = show (E.fromLeft _parse)
   | otherwise = ""
