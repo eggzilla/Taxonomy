@@ -19,17 +19,17 @@ data SimpleTaxon = SimpleTaxon
 -- as defined in ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump_readme.txt
 data NCBITaxDump = NCBITaxDump
   {
-    taxDumpCitations :: [TaxDumpCitation],
-    taxDumpDelNodes :: [TaxDumpDelNode],
-    taxDumpDivisions :: [TaxDumpDivision],
-    taxDumpGenCodes :: [TaxDumpGenCode],
-    taxDumpMergedNodes :: [TaxDumpMergedNode],
-    taxDumpNames :: [TaxDumpName],
-    taxDumpNodes :: [TaxDumpNode]
+    taxCitations :: [TaxCitation],
+    taxDelNodes :: [TaxDelNode],
+    taxDivisions :: [TaxDivision],
+    taxGenCodes :: [TaxGenCode],
+    taxMergedNodes :: [TaxMergedNode],
+    taxNames :: [TaxName],
+    taxNodes :: [TaxNode]
   }
   deriving (Show, Read, Eq)
 
-data TaxDumpCitation = TaxDumpCitation
+data TaxCitation = TaxCitation
   {
    -- the unique id of citation
    citId :: Int,
@@ -53,14 +53,14 @@ data TaxDumpCitation = TaxDumpCitation
   }
   deriving (Show, Read, Eq)
 
-data TaxDumpDelNode = TaxDumpDelNode
+data TaxDelNode = TaxDelNode
   {
    -- deleted node id
    delTaxId :: Int
   }
   deriving (Show, Read, Eq)
 
-data TaxDumpDivision = TaxDumpDivision
+data TaxDivision = TaxDivision
   {
    -- taxonomy database division id
    divisionId :: Int,
@@ -72,7 +72,7 @@ data TaxDumpDivision = TaxDumpDivision
   }
   deriving (Show, Read, Eq)
 
-data TaxDumpGenCode = TaxDumpGenCode
+data TaxGenCode = TaxGenCode
   {
    -- GenBank genetic code id
    geneticCodeId :: Int,
@@ -87,7 +87,7 @@ data TaxDumpGenCode = TaxDumpGenCode
   }
   deriving (Show, Read, Eq)
 
-data TaxDumpMergedNode = TaxDumpMergedNode
+data TaxMergedNode = TaxMergedNode
   {
    -- id of nodes which has been merged
    oldTaxId :: Int,
@@ -96,7 +96,7 @@ data TaxDumpMergedNode = TaxDumpMergedNode
   }
   deriving (Show, Read, Eq)
 
-data TaxDumpName = TaxDumpName
+data TaxName = TaxName
   {
    -- the id of node associated with this name
    nameTaxId :: Int,
@@ -161,7 +161,7 @@ readsRank input -- = [(Domain x)| x <- reads input ]
    | input == "no rank" = [(Norank,"")]
    | otherwise = [(Norank,"")]  
 
-data TaxDumpNode = TaxDumpNode
+data TaxNode = TaxNode
   {
    -- node id in GenBank
    taxId :: Int,
