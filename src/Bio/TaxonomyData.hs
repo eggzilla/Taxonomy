@@ -2,13 +2,13 @@
 --   taxonomy data
 
 module Bio.TaxonomyData where
-import Data.Tree
 
-data SimpleTaxDumpNode = SimpleTaxDumpNode
+data SimpleTaxon = SimpleTaxon
   {
    -- node id in GenBank
    simpleTaxId :: Int,
-   -- parent node id in GenBank taxonomy database
+   simpleScientificName :: String,
+   -- parent node id in GenBank taxonomy database               
    simpleParentTaxId :: Int,
    -- rank of this node (superkingdom, kingdom, ...) 
    simpleRank :: Rank
@@ -43,10 +43,10 @@ data TaxDumpCitation = TaxDumpCitation
    url :: Maybe String,
    -- any text (usually article name and authors)
    -- The following characters are escaped in this text by a backslash:
-						-- newline (appear as "\n"),
-						-- tab character ("\t"),
-						-- double quotes ('\"'),
-						-- backslash character ("\\").
+   -- newline (appear as "\n"),
+   -- tab character ("\t"),
+   -- double quotes ('\"'),
+   -- backslash character ("\\").
    text :: Maybe String,
    -- list of node ids separated by a single space
    taxIdList :: Maybe [Int]
@@ -111,7 +111,8 @@ data TaxDumpName = TaxDumpName
 
 -- | Taxonomic ranks: NCBI uses the uncommon Speciessubgroup 
 data Rank = Norank | Form | Variety | Infraspecies | Subspecies | Speciessubgroup | Species | Speciesgroup | Superspecies | Series | Section | Subgenus | Genus | Subtribe | Tribe | Supertribe | Subfamily | Family | Superfamily | Parvorder | Infraorder | Suborder | Order | Superorder | Magnorder | Cohort | Legion | Parvclass | Infraclass | Subclass | Class | Superclass | Microphylum | Infraphylum | Subphylum | Phylum | Superphylum | Infrakingdom | Subkingdom | Kingdom | Superkingdom | Domain deriving (Eq, Ord, Show, Bounded, Enum)
-          
+
+readsRank :: [Char] -> [(Rank, [Char])]
 instance Read Rank where
   readsPrec _ input = readsRank input
 
