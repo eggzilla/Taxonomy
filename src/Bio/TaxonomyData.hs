@@ -15,6 +15,33 @@ data SimpleTaxon = SimpleTaxon
   }
   deriving (Show, Read, Eq)
 
+-- | Data structure for Entrez taxonomy fetch result
+data Taxon = Taxon
+  {  taxonTaxId :: Int
+  ,  taxonScientificName :: String
+  ,  taxonParentTaxId :: Int
+  ,  taxonRank :: Rank
+  ,  division :: String
+  ,  geneticCode :: TaxGenCode
+  ,  mitoGeneticCode :: TaxGenCode
+  ,  lineage :: String
+  ,  lineageEx :: [LineageTaxon]
+  ,  createDate :: String
+  ,  updateDate :: String
+  ,  pubDate :: String
+  } deriving (Show, Eq)
+
+data TaxonName = TaxonName
+  {  classCDE :: String
+  ,  dispName :: String
+  } deriving (Show, Eq)
+
+data LineageTaxon = LineageTaxon
+  {  lineageTaxId :: Int
+  ,  lineageScienticName :: String
+  ,  lineageRank :: Rank}
+  deriving (Show, Eq)
+           
 -- | NCBI Taxonomy database dump hierachichal data structure
 -- as defined in ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump_readme.txt
 data NCBITaxDump = NCBITaxDump
