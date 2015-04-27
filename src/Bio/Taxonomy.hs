@@ -2,7 +2,8 @@
 
 module Bio.Taxonomy (                      
                        module Bio.TaxonomyData,
-                       genParserTaxonomyGraph,
+                       readTaxonomy,
+                       parseTaxonomy,
                        parseNCBITaxCitations,
                        readNCBITaxCitations,
                        parseNCBITaxDelNodes,
@@ -40,7 +41,15 @@ import Data.Graph.Inductive
 
 --------------------------------------------------------
 --fgl graph representation
-genParserTaxonomyGraph :: GenParser Char Int (Gr SimpleTaxon Double)
+-- | parse Taxonomy from input filePath                      
+readTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
+readTaxonomy filePath = parseFromFileEncISO88591 genParserTaxonomyGraph filePath
+
+-- | parse Taxonomy from input string
+parseTaxonomy :: [Char] -> Either ParseError (Gr SimpleTaxon Double)
+parseTaxonomy input = parse genParserTaxonomyGraph "parseTaxonomy" input
+
+genParserTaxonomyGraph :: GenParser Char st (Gr SimpleTaxon Double)
 genParserTaxonomyGraph = do
   nodesEdges <- many1 (try (genParserGraphNodeEdge))
   optional eof
