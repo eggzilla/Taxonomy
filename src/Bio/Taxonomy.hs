@@ -2,7 +2,9 @@
 
 module Bio.Taxonomy (                      
                        module Bio.TaxonomyData,
+                       drawTaxonomy,    
                        readTaxonomy,
+                       readNamedTaxonomy,            
                        parseTaxonomy,
                        parseNCBITaxCitations,
                        readNCBITaxCitations,
@@ -36,14 +38,42 @@ import Data.Maybe
 import Data.Either
 import qualified Data.Either.Unwrap as E
 import Data.Graph.Inductive
---import qualified Data.GraphViz as GV
---import qualified Data.GraphViz.Printing as GVP
+import qualified Data.GraphViz as GV
+import qualified Data.GraphViz.Printing as GVP
+import qualified Data.Text.Lazy as TL
 
 --------------------------------------------------------
+
 --fgl graph representation
+
+-- | draw Graph in dot format
+drawTaxonomy :: Gr SimpleTaxon Double -> String
+drawTaxonomy inputGraph = do
+  let params = GV.nonClusteredParams {GV.isDirected       = True
+                       , GV.globalAttributes = []
+                       , GV.isDotCluster     = const True
+                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack (show l))]
+                       , GV.fmtEdge          = const []
+                       }
+  let dotFormat = GV.graphToDot params inputGraph
+  let text = GVP.renderDot $ GVP.toDot dotFormat
+  TL.unpack text
+
 -- | parse Taxonomy from input filePath                      
+readNamedTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
+readNamedTaxonomy directoryPath = do
+  nodeNames <- readNCBITaxNames (directoryPath ++ "names.dmp")
+  if (isLeft nodeNames)
+     then do 
+       return (Left (E.fromLeft nodeNames))
+     else do
+       let filteredNodeNames = filter (\a -> nameClass a == "scientific name") (E.fromRight nodeNames)
+       taxonomyGraph <- parseFromFileEncISO88591 (genParserNamedTaxonomyGraph filteredNodeNames) (directoryPath ++ "nodes.dmp")
+       return taxonomyGraph
+
+-- | parse Taxonomy from file path
 readTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
-readTaxonomy filePath = parseFromFileEncISO88591 genParserTaxonomyGraph filePath
+readTaxonomy filepath = parseFromFileEncISO88591 genParserTaxonomyGraph filepath
 
 -- | parse Taxonomy from input string
 parseTaxonomy :: [Char] -> Either ParseError (Gr SimpleTaxon Double)
@@ -57,6 +87,22 @@ genParserTaxonomyGraph = do
   let taxedges = concat edgesList
   let taxnodes = concat nodesList
   return (mkGraph taxnodes taxedges)
+
+genParserNamedTaxonomyGraph :: [TaxName] -> GenParser Char st (Gr SimpleTaxon Double)
+genParserNamedTaxonomyGraph filteredNodeNames = do
+  nodesEdges <- many1 (try (genParserGraphNodeEdge))
+  optional eof
+  let (nodesList,edgesList) =  unzip nodesEdges
+  let taxedges = concat edgesList
+  let taxnodes = concat nodesList
+  let taxnamednodes = map (setNodeScientificName filteredNodeNames) taxnodes
+  return (mkGraph taxnamednodes taxedges)
+
+setNodeScientificName :: [TaxName] -> (t, SimpleTaxon) -> (t, SimpleTaxon)
+setNodeScientificName taxNames (inputNode,inputTaxon) = outputNode
+  where maybeRetrievedName = find (\a -> nameTaxId a == simpleTaxId inputTaxon) taxNames
+        retrievedName = maybe "no name" nameTxt maybeRetrievedName
+        outputNode = (inputNode,inputTaxon{simpleScientificName = retrievedName})
 
 genParserGraphNodeEdge :: GenParser Char st ([(Int,SimpleTaxon)],[(Int,Int,Double)])
 genParserGraphNodeEdge = do
@@ -368,15 +414,18 @@ genParserNCBITaxName = do
   tab
   char ('|')
   tab
-  _nameTxt <- many1 (noneOf ("\t"))
+  _nameTxt <- many1 (noneOf ("\t\n"))
   tab
   char ('|')
   tab
-  _uniqueName <- optionMaybe (many1 (noneOf "\t"))
+  _uniqueName <- optionMaybe (many1 (noneOf "\t\n"))
   tab
   char ('|')
   tab
-  _nameClass <- many1 (noneOf ("\t"))
+  _nameClass <- many1 (noneOf ("\t\n"))
+  tab
+  char ('|')
+  newline
   return $ TaxName (readInt _taxId) _nameTxt _uniqueName _nameClass
 
 genParserNCBISimpleTaxon :: GenParser Char st SimpleTaxon
