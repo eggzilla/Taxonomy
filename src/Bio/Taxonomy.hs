@@ -2,6 +2,7 @@
 
 module Bio.Taxonomy (                      
                        module Bio.TaxonomyData,
+                       extractTaxonomySubTree,
                        drawTaxonomy,    
                        readTaxonomy,
                        readNamedTaxonomy,            
@@ -56,8 +57,8 @@ drawTaxonomy inputGraph = do
                        , GV.fmtEdge          = const []
                        }
   let dotFormat = GV.graphToDot params inputGraph
-  let text = GVP.renderDot $ GVP.toDot dotFormat
-  TL.unpack text
+  let dottext = GVP.renderDot $ GVP.toDot dotFormat
+  TL.unpack dottext
 
 -- | parse Taxonomy from input filePath                      
 readNamedTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
@@ -99,8 +100,8 @@ genParserNamedTaxonomyGraph filteredNodeNames = do
   return (mkGraph taxnamednodes taxedges)
 
 setNodeScientificName :: [TaxName] -> (t, SimpleTaxon) -> (t, SimpleTaxon)
-setNodeScientificName taxNames (inputNode,inputTaxon) = outputNode
-  where maybeRetrievedName = find (\a -> nameTaxId a == simpleTaxId inputTaxon) taxNames
+setNodeScientificName inputTaxNames (inputNode,inputTaxon) = outputNode
+  where maybeRetrievedName = find (\a -> nameTaxId a == simpleTaxId inputTaxon) inputTaxNames
         retrievedName = maybe "no name" nameTxt maybeRetrievedName
         outputNode = (inputNode,inputTaxon{simpleScientificName = retrievedName})
 
@@ -160,6 +161,21 @@ genParserGraphNodeEdge = do
   char ('\n')
   return $ ([((readInt _simpleTaxId),SimpleTaxon (readInt _simpleTaxId) [] (readInt _simpleParentTaxId) (readRank _simpleRank))],[((readInt _simpleTaxId),(readInt _simpleParentTaxId),(1 :: Double))])
 
+-- |  a subtree correpsonding to input node paths to root
+extractTaxonomySubTree :: [Node] -> (Gr SimpleTaxon Double) -> Maybe Rank -> (Gr SimpleTaxon Double)
+extractTaxonomySubTree inputNodes graph highestRank = taxonomySubTree
+  where paths = nub (concatMap (\n -> (sp (n :: Node) (1 :: Node) graph)) inputNodes)
+        contexts = map (context graph) paths
+        lnodes = map labNode' contexts
+        filteredLNodes = filterNodesByRank highestRank lnodes
+        ledges = nub (concatMap (out graph) (map fst filteredLNodes))
+        taxonomySubTree = (mkGraph filteredLNodes ledges) :: (Gr SimpleTaxon Double)
+
+filterNodesByRank :: Maybe Rank -> [(t, SimpleTaxon)] -> [(t, SimpleTaxon)]
+filterNodesByRank highestRank inputNodes
+  | (isJust highestRank) = filter (\(_,t) -> simpleRank t > (fromJust highestRank)) inputNodes
+  | otherwise = inputNodes
+        
 ----------------------------
 -- Data.Tree representation
 constructSimpleTaxTree :: [SimpleTaxon] -> Tree SimpleTaxon
