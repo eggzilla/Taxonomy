@@ -52,7 +52,7 @@ drawTaxonomy inputGraph = do
   let params = GV.nonClusteredParams {GV.isDirected       = True
                        , GV.globalAttributes = []
                        , GV.isDotCluster     = const True
-                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack (show l))]
+                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (simpleRank l)) ++ "\n" ++ simpleScientificName l))]
                        , GV.fmtEdge          = const []
                        }
   let dotFormat = GV.graphToDot params inputGraph
