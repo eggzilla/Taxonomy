@@ -2,7 +2,8 @@
 
 module Bio.Taxonomy (                      
                        module Bio.TaxonomyData,
-                       extractTaxonomySubTree,
+                       extractTaxonomySubTreebyLevel,
+                       extractTaxonomySubTreebyRank,
                        drawTaxonomy,    
                        readTaxonomy,
                        readNamedTaxonomy,            
@@ -161,21 +162,53 @@ genParserGraphNodeEdge = do
   char ('\n')
   return $ ([((readInt _simpleTaxId),SimpleTaxon (readInt _simpleTaxId) [] (readInt _simpleParentTaxId) (readRank _simpleRank))],[((readInt _simpleTaxId),(readInt _simpleParentTaxId),(1 :: Double))])
       
--- | Extract a subtree correpsonding to input node paths to root. If a Rank is provided, all node that are less or equal are omitted
-extractTaxonomySubTree :: [Node] -> (Gr SimpleTaxon Double) -> Maybe Rank -> (Gr SimpleTaxon Double)
-extractTaxonomySubTree inputNodes graph highestRank = taxonomySubTree
+-- | Extract a subtree correpsonding to input node paths to root. Only nodes in level number distance to root are included
+extractTaxonomySubTreebyLevel :: [Node] -> (Gr SimpleTaxon Double) -> Maybe Int -> (Gr SimpleTaxon Double)
+extractTaxonomySubTreebyLevel inputNodes graph levelNumber = taxonomySubTree
+  where paths = nub (concatMap (\n -> (sp (n :: Node) (1 :: Node) graph)) inputNodes)
+        contexts = map (context graph) paths
+        lnodes = map labNode' contexts
+        ledges = nub (concatMap (out graph) (map fst lnodes))
+        unfilteredTaxonomySubTree = (mkGraph lnodes ledges) :: (Gr SimpleTaxon Double)
+        filteredLNodes = filterNodesByLevel levelNumber lnodes unfilteredTaxonomySubTree
+        filteredledges = nub (concatMap (out graph) (map fst filteredLNodes))
+        taxonomySubTree = (mkGraph filteredLNodes  filteredledges) :: (Gr SimpleTaxon Double)                 
+
+-- | Extract a subtree corresponding to input node paths to root. If a Rank is provided, all node that are less or equal are omitted
+extractTaxonomySubTreebyRank :: [Node] -> (Gr SimpleTaxon Double) -> Maybe Rank -> (Gr SimpleTaxon Double)
+extractTaxonomySubTreebyRank inputNodes graph highestRank = taxonomySubTree
   where paths = nub (concatMap (\n -> (sp (n :: Node) (1 :: Node) graph)) inputNodes)
         contexts = map (context graph) paths
         lnodes = map labNode' contexts
         filteredLNodes = filterNodesByRank highestRank lnodes
-        ledges = nub (concatMap (out graph) (map fst filteredLNodes))
+        ledges = nub (concatMap (out graph) (map fst lnodes))
         taxonomySubTree = (mkGraph filteredLNodes ledges) :: (Gr SimpleTaxon Double)
+
+filterNodesByLevel :: Maybe Int -> [(Node, SimpleTaxon)] -> (Gr SimpleTaxon Double) -> [(Node, SimpleTaxon)]
+filterNodesByLevel levelNumber inputNodes graph
+  | (isJust levelNumber) = filteredNodes
+  | otherwise = inputNodes
+    --distances of all nodes to root
+    where nodedistances = level (1::Node) (undir graph)
+          sortedNodeDistances = sortBy sortByNodeID nodedistances
+          sortedInputNodes = sortBy sortByNodeID inputNodes
+          zippedNodeDistancesInputNodes = zip sortedNodeDistances sortedInputNodes
+          zippedFilteredNodes = filter (\((_,distance),(_,_)) -> distance <= (fromJust levelNumber)) zippedNodeDistancesInputNodes
+          filteredNodes = map snd zippedFilteredNodes
+
+sortByNodeID :: (Node,a) -> (Node,a) -> Ordering
+sortByNodeID (n1, _) (n2, _)
+  | n1 < n2 = GT
+  | n1 > n2 = LT
+  | n1 == n2 = EQ
+  | otherwise = EQ
 
 filterNodesByRank :: Maybe Rank -> [(t, SimpleTaxon)] -> [(t, SimpleTaxon)]
 filterNodesByRank highestRank inputNodes
-  | (isJust highestRank) = filter (\(_,t) -> simpleRank t >= (fromJust highestRank)) inputNodes
+  | (isJust highestRank) = filteredNodes
   | otherwise = inputNodes
-        
+    where filteredNodes = filter (\(_,t) -> simpleRank t >= (fromJust highestRank)) inputNodes ++ noRankNodes
+          noRankNodes = filter (\(_,t) -> simpleRank t == Norank) inputNodes
 ----------------------------
 -- Data.Tree representation
 constructSimpleTaxTree :: [SimpleTaxon] -> Tree SimpleTaxon
