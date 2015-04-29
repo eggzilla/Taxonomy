@@ -160,8 +160,8 @@ genParserGraphNodeEdge = do
   char ('|')
   char ('\n')
   return $ ([((readInt _simpleTaxId),SimpleTaxon (readInt _simpleTaxId) [] (readInt _simpleParentTaxId) (readRank _simpleRank))],[((readInt _simpleTaxId),(readInt _simpleParentTaxId),(1 :: Double))])
-
--- |  a subtree correpsonding to input node paths to root
+      
+-- | Extract a subtree correpsonding to input node paths to root. If a Rank is provided, all node that are less or equal are omitted
 extractTaxonomySubTree :: [Node] -> (Gr SimpleTaxon Double) -> Maybe Rank -> (Gr SimpleTaxon Double)
 extractTaxonomySubTree inputNodes graph highestRank = taxonomySubTree
   where paths = nub (concatMap (\n -> (sp (n :: Node) (1 :: Node) graph)) inputNodes)
@@ -173,7 +173,7 @@ extractTaxonomySubTree inputNodes graph highestRank = taxonomySubTree
 
 filterNodesByRank :: Maybe Rank -> [(t, SimpleTaxon)] -> [(t, SimpleTaxon)]
 filterNodesByRank highestRank inputNodes
-  | (isJust highestRank) = filter (\(_,t) -> simpleRank t > (fromJust highestRank)) inputNodes
+  | (isJust highestRank) = filter (\(_,t) -> simpleRank t >= (fromJust highestRank)) inputNodes
   | otherwise = inputNodes
         
 ----------------------------
