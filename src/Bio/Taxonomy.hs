@@ -181,16 +181,14 @@ genParserGraphNodeEdge = do
   return $ ([((readInt _simpleTaxId),SimpleTaxon (readInt _simpleTaxId) [] (readInt _simpleParentTaxId) (readRank _simpleRank))],[((readInt _simpleTaxId),(readInt _simpleParentTaxId),(1 :: Double))])
       
 -- | Extract a subtree correpsonding to input node paths to root. Only nodes in level number distance to root are included
-compareSubTreePair :: (Gr SimpleTaxon Double) ->  (Gr SimpleTaxon Double) -> (Gr CompareTaxon Double)
-compareSubTreePair graph1 graph2 = resultGraph
-  where labNodes1 = labNodes graph1
-        labNodes2 = labNodes graph2
-        labEdges1 = labEdges graph1
-        labEdges2 = labEdges graph2
-        mergedNodes = nub (labNodes1 ++ labNodes2)
-        mergedEdges = nub (labEdges1 ++ labEdges2)
+compareSubTrees :: [(Gr SimpleTaxon Double)] -> (Gr CompareTaxon Double)
+compareSubTrees graphs = resultGraph
+  where labNodes = map labNodes graphs
+        labEdges = map labEdges graphs
+        mergedNodes = nub (concat labNodes)
+        mergedEdges = nub (concat labEdges)
         --annotate node in which of the compared trees they are present
-        comparedNodes = annotateTaxonsDifference [labNodes1,labNodes2] mergedNodes
+        comparedNodes = annotateTaxonsDifference labNodes mergedNodes
         resultGraph = (mkGraph comparedNodes mergedEdges) :: (Gr CompareTaxon Double)
 
 annotateTaxonsDifference  :: [[LNode SimpleTaxon]] -> [LNode SimpleTaxon] -> [LNode CompareTaxon]
