@@ -2,6 +2,7 @@
 
 module Bio.Taxonomy (                      
                        module Bio.TaxonomyData,
+                       compareSubTreePair,    
                        extractTaxonomySubTreebyLevel,
                        extractTaxonomySubTreebyRank,
                        drawTaxonomy,    
@@ -60,6 +61,23 @@ drawTaxonomy inputGraph = do
   let dotFormat = GV.graphToDot params inputGraph
   let dottext = GVP.renderDot $ GVP.toDot dotFormat
   TL.unpack dottext
+
+-- | draw Comparison graph in dot format
+
+-- drawComparison :: (Gr SimpleTaxon Double) -> String
+-- drawComparison inputGraph = do
+--   let params = GV.nonClusteredParams {GV.isDirected       = True
+--                        , GV.globalAttributes = []
+--                        , GV.isDotCluster     = const True
+--                        , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (simpleRank l)) ++ "\n" ++ simpleScientificName l))]
+--                        , GV.fmtEdge          = const []
+--                        }
+--   let dotFormat = GV.graphToDot params inputGraph
+--   let dottext = GVP.renderDot $ GVP.toDot dotFormat
+     ---hue 255 of 360 max
+     ---HSV 0.1 1.0 1.0
+
+--   TL.unpack dottext
 
 -- | parse Taxonomy from input filePath                      
 readNamedTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
@@ -163,6 +181,30 @@ genParserGraphNodeEdge = do
   return $ ([((readInt _simpleTaxId),SimpleTaxon (readInt _simpleTaxId) [] (readInt _simpleParentTaxId) (readRank _simpleRank))],[((readInt _simpleTaxId),(readInt _simpleParentTaxId),(1 :: Double))])
       
 -- | Extract a subtree correpsonding to input node paths to root. Only nodes in level number distance to root are included
+compareSubTreePair :: (Gr SimpleTaxon Double) ->  (Gr SimpleTaxon Double) -> (Gr CompareTaxon Double)
+compareSubTreePair graph1 graph2 = resultGraph
+  where labNodes1 = labNodes graph1
+        labNodes2 = labNodes graph2
+        labEdges1 = labEdges graph1
+        labEdges2 = labEdges graph2
+        mergedNodes = nub (labNodes1 ++ labNodes2)
+        mergedEdges = nub (labEdges1 ++ labEdges2)
+        --annotate node in which of the compared trees they are present
+        comparedNodes = annotateTaxonsDifference [labNodes1,labNodes2] mergedNodes
+        resultGraph = (mkGraph comparedNodes mergedEdges) :: (Gr CompareTaxon Double)
+
+annotateTaxonsDifference  :: [[LNode SimpleTaxon]] -> [LNode SimpleTaxon] -> [LNode CompareTaxon]
+annotateTaxonsDifference  treesNodes mergedtreeNodes = comparedNodes
+  where comparedNodes = map (annotateTaxonDifference indexedTreesNodes) mergedtreeNodes
+        indexedTreesNodes = zip [0..(length treesNodes)] treesNodes
+        
+
+annotateTaxonDifference :: [(Int,[LNode SimpleTaxon])] -> LNode SimpleTaxon -> LNode CompareTaxon
+annotateTaxonDifference indexedTreesNodes mergedtreeNode = comparedNode
+  where comparedNode = ((simpleTaxId (snd mergedtreeNode)),(CompareTaxon (simpleScientificName (snd mergedtreeNode)) (simpleRank (snd mergedtreeNode)) currentInTree))
+        currentInTree = concatMap (\(i,treeNodes) -> if (elem mergedtreeNode treeNodes) then [i] else []) indexedTreesNodes
+        
+-- | Extract a subtree correpsonding to input node paths to root. Only nodes in level number distance to root are included
 extractTaxonomySubTreebyLevel :: [Node] -> (Gr SimpleTaxon Double) -> Maybe Int -> (Gr SimpleTaxon Double)
 extractTaxonomySubTreebyLevel inputNodes graph levelNumber = taxonomySubTree
   where paths = nub (concatMap (\n -> (sp (n :: Node) (1 :: Node) graph)) inputNodes)
@@ -214,7 +256,6 @@ filterNodesByRank highestRank inputNodes
 constructSimpleTaxTree :: [SimpleTaxon] -> Tree SimpleTaxon
 constructSimpleTaxTree (taxnode:taxnodes) = Node taxnode (concat (addSimpleChildElements (simpleTaxId taxnode) taxnodes))
               
-
 addSimpleChildElements :: Int -> [SimpleTaxon] -> [[Tree SimpleTaxon]]
 addSimpleChildElements currentTaxId taxnodes = do
   let (childElements, remainingElements) = partition (\x -> simpleParentTaxId x == currentTaxId) taxnodes

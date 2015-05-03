@@ -15,6 +15,15 @@ data SimpleTaxon = SimpleTaxon
   }
   deriving (Show, Read, Eq)
 
+data CompareTaxon = CompareTaxon
+  {
+   compareScientificName :: String,
+   compareSimpleRank :: Rank,
+   -- number indicating in which trees, 
+   inTree :: [Int]
+  }
+  deriving (Show, Read, Eq)
+
 -- | Data structure for Entrez taxonomy fetch result
 data Taxon = Taxon
   {  taxonTaxId :: Int
