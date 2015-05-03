@@ -2,7 +2,8 @@
 
 module Bio.Taxonomy (                      
                        module Bio.TaxonomyData,
-                       compareSubTreePair,    
+                       drawTreeComparison,
+                       compareSubTrees,    
                        extractTaxonomySubTreebyLevel,
                        extractTaxonomySubTreebyRank,
                        drawTaxonomy,    
@@ -43,6 +44,8 @@ import qualified Data.Either.Unwrap as E
 import Data.Graph.Inductive
 import qualified Data.GraphViz as GV
 import qualified Data.GraphViz.Printing as GVP
+import qualified Data.GraphViz.Attributes.Colors as GVAC
+import qualified Data.GraphViz.Attributes.Complete as GVA
 import qualified Data.Text.Lazy as TL
 
 --------------------------------------------------------
@@ -63,21 +66,26 @@ drawTaxonomy inputGraph = do
   TL.unpack dottext
 
 -- | draw Comparison graph in dot format
+drawTreeComparison :: (Int,(Gr CompareTaxon Double)) -> String
+drawTreeComparison (treeNumber,inputGraph) = do
+  let cList = makeColorList treeNumber 
+  let params = GV.nonClusteredParams {GV.isDirected = True
+                       , GV.globalAttributes = []
+                       , GV.isDotCluster = const True
+                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (compareRank l)) ++ "\n" ++ compareScientificName l)), GV.style GV.striped, GVA.Color (selectColors (inTree l) cList)]
+                       , GV.fmtEdge = const []
+                       }
+  let dotFormat = GV.graphToDot params inputGraph
+  let dottext = GVP.renderDot $ GVP.toDot dotFormat
+  TL.unpack dottext
 
--- drawComparison :: (Gr SimpleTaxon Double) -> String
--- drawComparison inputGraph = do
---   let params = GV.nonClusteredParams {GV.isDirected       = True
---                        , GV.globalAttributes = []
---                        , GV.isDotCluster     = const True
---                        , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (simpleRank l)) ++ "\n" ++ simpleScientificName l))]
---                        , GV.fmtEdge          = const []
---                        }
---   let dotFormat = GV.graphToDot params inputGraph
---   let dottext = GVP.renderDot $ GVP.toDot dotFormat
-     ---hue 255 of 360 max
-     ---HSV 0.1 1.0 1.0
+selectColors :: [Int] -> [GVA.Color] -> GVAC.ColorList
+selectColors inTrees currentColorList = GVAC.toColorList (map (\i -> currentColorList !! i) inTrees)
 
---   TL.unpack dottext
+makeColorList :: Int -> [GVA.Color]
+makeColorList treeNumber = cList
+  where cList = map (\i -> GVAC.HSV (((fromIntegral i)/(fromIntegral neededColors)) * 0.708) 1.0 1.0)  [0..neededColors]
+        neededColors = treeNumber - 1
 
 -- | parse Taxonomy from input filePath                      
 readNamedTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
@@ -181,14 +189,14 @@ genParserGraphNodeEdge = do
   return $ ([((readInt _simpleTaxId),SimpleTaxon (readInt _simpleTaxId) [] (readInt _simpleParentTaxId) (readRank _simpleRank))],[((readInt _simpleTaxId),(readInt _simpleParentTaxId),(1 :: Double))])
       
 -- | Extract a subtree correpsonding to input node paths to root. Only nodes in level number distance to root are included
-compareSubTrees :: [(Gr SimpleTaxon Double)] -> (Gr CompareTaxon Double)
-compareSubTrees graphs = resultGraph
-  where labNodes = map labNodes graphs
-        labEdges = map labEdges graphs
-        mergedNodes = nub (concat labNodes)
-        mergedEdges = nub (concat labEdges)
+compareSubTrees :: [(Gr SimpleTaxon Double)] -> (Int,(Gr CompareTaxon Double))
+compareSubTrees graphs = (length graphs,resultGraph)
+  where treesLabNodes = map labNodes graphs
+        treesLabEdges = map labEdges graphs
+        mergedNodes = nub (concat treesLabNodes)
+        mergedEdges = nub (concat treesLabEdges)
         --annotate node in which of the compared trees they are present
-        comparedNodes = annotateTaxonsDifference labNodes mergedNodes
+        comparedNodes = annotateTaxonsDifference treesLabNodes mergedNodes
         resultGraph = (mkGraph comparedNodes mergedEdges) :: (Gr CompareTaxon Double)
 
 annotateTaxonsDifference  :: [[LNode SimpleTaxon]] -> [LNode SimpleTaxon] -> [LNode CompareTaxon]

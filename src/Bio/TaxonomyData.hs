@@ -18,7 +18,7 @@ data SimpleTaxon = SimpleTaxon
 data CompareTaxon = CompareTaxon
   {
    compareScientificName :: String,
-   compareSimpleRank :: Rank,
+   compareRank :: Rank,
    -- number indicating in which trees, 
    inTree :: [Int]
   }
