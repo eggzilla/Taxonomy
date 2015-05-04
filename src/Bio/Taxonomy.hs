@@ -72,10 +72,10 @@ drawTreeComparison (treeNumber,inputGraph) = do
   let params = GV.nonClusteredParams {GV.isDirected = True
                        , GV.globalAttributes = []
                        , GV.isDotCluster = const True
-                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (compareRank l)) ++ "\n" ++ compareScientificName l)), GV.style GV.striped, GVA.Color (selectColors (inTree l) cList)]
+                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (compareRank l)) ++ "\n" ++ compareScientificName l)), GV.style GV.wedged, GVA.Color (selectColors (inTree l) cList)]
                        , GV.fmtEdge = const []
                        }
-  let dotFormat = GV.graphToDot params inputGraph
+  let dotFormat = GV.graphToDot params (grev inputGraph)
   let dottext = GVP.renderDot $ GVP.toDot dotFormat
   TL.unpack dottext
 
@@ -84,7 +84,7 @@ selectColors inTrees currentColorList = GVAC.toColorList (map (\i -> currentColo
 
 makeColorList :: Int -> [GVA.Color]
 makeColorList treeNumber = cList
-  where cList = map (\i -> GVAC.HSV (((fromIntegral i)/(fromIntegral neededColors)) * 0.708) 1.0 1.0)  [0..neededColors]
+  where cList = map (\i -> GVAC.HSV (((fromIntegral i)/(fromIntegral neededColors)) * 0.708) 0.5 1.0)  [0..neededColors]
         neededColors = treeNumber - 1
 
 -- | parse Taxonomy from input filePath                      
