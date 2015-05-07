@@ -26,9 +26,7 @@ module Bio.Taxonomy (
                        readNCBITaxNodes,
                        parseNCBISimpleTaxons,
                        readNCBISimpleTaxons,
-                       readNCBITaxonomyDatabase,
-                       constructTaxTree,
-                       constructSimpleTaxTree
+                       readNCBITaxonomyDatabase
                       ) where
 import Prelude 
 import System.IO 
@@ -36,7 +34,6 @@ import Bio.TaxonomyData
 import Text.Parsec.Prim (runP)
 import Text.ParserCombinators.Parsec
 import Control.Monad
-import Data.Tree
 import Data.List
 import Data.Maybe    
 import Data.Either
@@ -257,33 +254,6 @@ filterNodesByRank highestRank inputNodes
   | otherwise = inputNodes
     where filteredNodes = filter (\(_,t) -> simpleRank t >= (fromJust highestRank)) inputNodes ++ noRankNodes
           noRankNodes = filter (\(_,t) -> simpleRank t == Norank) inputNodes
-----------------------------
--- Data.Tree representation
-constructSimpleTaxTree :: [SimpleTaxon] -> Tree SimpleTaxon
-constructSimpleTaxTree (taxnode:taxnodes) = Node taxnode (concat (addSimpleChildElements (simpleTaxId taxnode) taxnodes))
-              
-addSimpleChildElements :: Int -> [SimpleTaxon] -> [[Tree SimpleTaxon]]
-addSimpleChildElements currentTaxId taxnodes = do
-  let (childElements, remainingElements) = partition (\x -> simpleParentTaxId x == currentTaxId) taxnodes
-  let subtreeLists = map (\x -> (x:remainingElements)) childElements
-  let subtrees = constructSimpleSubTrees subtreeLists
-  return subtrees
-         
-constructSimpleSubTrees :: [[SimpleTaxon]] -> [Tree SimpleTaxon]
-constructSimpleSubTrees subtreeLists =  map constructSimpleTaxTree subtreeLists
-
-constructTaxTree :: [TaxNode] -> Tree TaxNode
-constructTaxTree (taxnode:taxnodes) = Node taxnode (concat (addChildElements (taxId taxnode) taxnodes))
-
-addChildElements :: Int -> [TaxNode] -> [[Tree TaxNode]]
-addChildElements currentTaxId taxnodes = do
-  let (childElements, remainingElements) = partition (\x -> parentTaxId x == currentTaxId) taxnodes
-  let subtreeLists = map (\x -> (x:remainingElements)) childElements
-  let subtrees = constructSubTrees subtreeLists
-  return subtrees
-         
-constructSubTrees :: [[TaxNode]] -> [Tree TaxNode]
-constructSubTrees subtreeLists =  map constructTaxTree subtreeLists
 
 -- | parse NCBITaxCitations from input string
 parseNCBITaxCitations :: [Char] -> Either ParseError [TaxCitation]
