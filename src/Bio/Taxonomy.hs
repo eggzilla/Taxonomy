@@ -109,7 +109,7 @@ genParserTaxonomyGraph = do
   nodesEdges <- many1 (try (genParserGraphNodeEdge))
   optional eof
   let (nodesList,edgesList) =  unzip nodesEdges
-  let taxedges = concat edgesList
+  let taxedges = filter (\(a,b,_) -> a /= b) (concat edgesList)
   let taxnodes = concat nodesList
   return (mkGraph taxnodes taxedges)
 
@@ -118,7 +118,7 @@ genParserNamedTaxonomyGraph filteredNodeNames = do
   nodesEdges <- many1 (try (genParserGraphNodeEdge))
   optional eof
   let (nodesList,edgesList) =  unzip nodesEdges
-  let taxedges = concat edgesList
+  let taxedges = filter (\(a,b,_) -> a /= b) (concat edgesList)
   let taxnodes = concat nodesList
   let taxnamednodes = map (setNodeScientificName filteredNodeNames) taxnodes
   return (mkGraph taxnamednodes taxedges)
