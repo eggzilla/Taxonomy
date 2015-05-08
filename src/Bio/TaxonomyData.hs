@@ -2,12 +2,13 @@
 --   taxonomy data
 
 module Bio.TaxonomyData where
+import qualified Data.ByteString as B
 
 data SimpleTaxon = SimpleTaxon
   {
    -- node id in GenBank
    simpleTaxId :: Int,
-   simpleScientificName :: String,
+   simpleScientificName :: B.ByteString,
    -- parent node id in GenBank taxonomy database               
    simpleParentTaxId :: Int,
    -- rank of this node (superkingdom, kingdom, ...) 
@@ -17,7 +18,7 @@ data SimpleTaxon = SimpleTaxon
 
 data CompareTaxon = CompareTaxon
   {
-   compareScientificName :: String,
+   compareScientificName :: B.ByteString,
    compareRank :: Rank,
    -- number indicating in which trees, 
    inTree :: [Int]
@@ -137,11 +138,11 @@ data TaxName = TaxName
    -- the id of node associated with this name
    nameTaxId :: Int,
    -- name itself
-   nameTxt :: String,
+   nameTxt :: B.ByteString,
    -- the unique variant of this name if name not unique
-   uniqueName :: Maybe String,
+   uniqueName :: B.ByteString,
    -- (synonym, common name, ...)
-   nameClass :: String
+   nameClass :: B.ByteString
   }
   deriving (Show, Read, Eq)
 

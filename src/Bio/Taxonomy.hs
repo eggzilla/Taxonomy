@@ -44,7 +44,8 @@ import qualified Data.GraphViz.Printing as GVP
 import qualified Data.GraphViz.Attributes.Colors as GVAC
 import qualified Data.GraphViz.Attributes.Complete as GVA
 import qualified Data.Text.Lazy as TL
-
+--import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as B
 --------------------------------------------------------
 
 --fgl graph representation
@@ -55,7 +56,7 @@ drawTaxonomy inputGraph = do
   let params = GV.nonClusteredParams {GV.isDirected       = True
                        , GV.globalAttributes = []
                        , GV.isDotCluster     = const True
-                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (simpleRank l)) ++ "\n" ++ simpleScientificName l))]
+                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (simpleRank l)) ++ "\n" ++ (B.unpack (simpleScientificName l))))]
                        , GV.fmtEdge          = const []
                        }
   let dotFormat = GV.graphToDot params inputGraph
@@ -69,7 +70,7 @@ drawTreeComparison (treeNumber,inputGraph) = do
   let params = GV.nonClusteredParams {GV.isDirected = True
                        , GV.globalAttributes = []
                        , GV.isDotCluster = const True
-                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (compareRank l)) ++ "\n" ++ compareScientificName l)), GV.style GV.wedged, GVA.Color (selectColors (inTree l) cList)]
+                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (compareRank l)) ++ "\n" ++ (B.unpack (compareScientificName l)))), GV.style GV.wedged, GVA.Color (selectColors (inTree l) cList)]
                        , GV.fmtEdge = const []
                        }
   let dotFormat = GV.graphToDot params (grev inputGraph)
@@ -92,7 +93,7 @@ readNamedTaxonomy directoryPath = do
      then do 
        return (Left (E.fromLeft nodeNames))
      else do
-       let filteredNodeNames = filter (\a -> nameClass a == "scientific name") (E.fromRight nodeNames)
+       let filteredNodeNames = filter (\a -> nameClass a == B.pack ("scientific name")) (E.fromRight nodeNames)
        taxonomyGraph <- parseFromFileEncISO88591 (genParserNamedTaxonomyGraph filteredNodeNames) (directoryPath ++ "nodes.dmp")
        return taxonomyGraph
 
@@ -126,7 +127,7 @@ genParserNamedTaxonomyGraph filteredNodeNames = do
 setNodeScientificName :: [TaxName] -> (t, SimpleTaxon) -> (t, SimpleTaxon)
 setNodeScientificName inputTaxNames (inputNode,inputTaxon) = outputNode
   where maybeRetrievedName = find (\a -> nameTaxId a == simpleTaxId inputTaxon) inputTaxNames
-        retrievedName = maybe "no name" nameTxt maybeRetrievedName
+        retrievedName = maybe (B.pack "no name") nameTxt maybeRetrievedName
         outputNode = (inputNode,inputTaxon{simpleScientificName = retrievedName})
 
 genParserGraphNodeEdge :: GenParser Char st ([(Int,SimpleTaxon)],[(Int,Int,Double)])
@@ -183,7 +184,7 @@ genParserGraphNodeEdge = do
   tab
   char ('|')
   char ('\n')
-  return $ ([((readInt _simpleTaxId),SimpleTaxon (readInt _simpleTaxId) [] (readInt _simpleParentTaxId) (readRank _simpleRank))],[((readInt _simpleTaxId),(readInt _simpleParentTaxId),(1 :: Double))])
+  return $ ([((readInt _simpleTaxId),SimpleTaxon (readInt _simpleTaxId) B.empty (readInt _simpleParentTaxId) (readRank _simpleRank))],[((readInt _simpleTaxId),(readInt _simpleParentTaxId),(1 :: Double))])
       
 -- | Extract a subtree correpsonding to input node paths to root. Only nodes in level number distance to root are included
 compareSubTrees :: [(Gr SimpleTaxon Double)] -> (Int,(Gr CompareTaxon Double))
@@ -492,7 +493,7 @@ genParserNCBITaxName = do
   tab
   char ('|')
   newline
-  return $ TaxName (readInt _taxId) _nameTxt _uniqueName _nameClass
+  return $ TaxName (readInt _taxId) (B.pack _nameTxt) (maybe B.empty B.pack _uniqueName) (B.pack _nameClass)
 
 genParserNCBISimpleTaxon :: GenParser Char st SimpleTaxon
 genParserNCBISimpleTaxon = do
@@ -548,7 +549,7 @@ genParserNCBISimpleTaxon = do
   tab
   char ('|')
   char ('\n')
-  return $ SimpleTaxon (readInt _simpleTaxId) [] (readInt _simpleParentTaxId) (readRank _simpleRank) 
+  return $ SimpleTaxon (readInt _simpleTaxId) B.empty (readInt _simpleParentTaxId) (readRank _simpleRank) 
 
 genParserNCBITaxNode :: GenParser Char st TaxNode
 genParserNCBITaxNode = do
