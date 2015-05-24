@@ -228,3 +228,28 @@ data TaxNode = TaxNode
    nodeComments :: Maybe String
   }
   deriving (Show, Read, Eq)
+
+-- | Simple Gene2Accession table 
+data SimpleGene2Accession = SimpleGene2Accession
+  { simpleTaxIdEntry :: Int,
+    simpleGenomicNucleotideAccessionVersion :: String
+  } deriving (Show, Eq, Read) 
+
+-- | Datastructure for Gene2Accession table
+data Gene2Accession = Gene2Accession
+  { taxIdEntry :: Int,
+    geneID :: Int,
+    status :: String,
+    rnaNucleotideAccessionVersion :: String,
+    rnaNucleotideGi :: String,
+    proteinAccessionVersion :: String,
+    proteinGi :: String,
+    genomicNucleotideAccessionVersion :: String,
+    genomicNucleotideGi :: String,
+    startPositionOnTheGenomicAccession :: String,
+    endPositionOnTheGenomicAccession ::  String,
+    orientation :: String,
+    assembly :: String,
+    maturePeptideAccessionVersion :: String,
+    maturePeptideGi :: String
+  } deriving (Show, Eq, Read)  
