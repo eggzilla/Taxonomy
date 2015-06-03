@@ -2,6 +2,7 @@
 
 module Bio.Taxonomy (                      
                        module Bio.TaxonomyData,
+                       getParentbyRank,
                        drawTreeComparison,
                        compareSubTrees,    
                        extractTaxonomySubTreebyLevel,
@@ -44,7 +45,6 @@ import qualified Data.GraphViz.Printing as GVP
 import qualified Data.GraphViz.Attributes.Colors as GVAC
 import qualified Data.GraphViz.Attributes.Complete as GVA
 import qualified Data.Text.Lazy as TL
---import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B
 --------------------------------------------------------
 
@@ -54,7 +54,7 @@ import qualified Data.ByteString.Char8 as B
 drawTaxonomy :: Gr SimpleTaxon Double -> String
 drawTaxonomy inputGraph = do
   let params = GV.nonClusteredParams {GV.isDirected       = True
-                       , GV.globalAttributes = []
+                       , GV.globalAttributes = [GV.GraphAttrs [GVA.Size (GVA.GSize (20 :: Double) (Just (20 :: Double)) False)]]
                        , GV.isDotCluster     = const True
                        , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (simpleRank l)) ++ "\n" ++ (B.unpack (simpleScientificName l))))]
                        , GV.fmtEdge          = const []
@@ -230,6 +230,14 @@ extractTaxonomySubTreebyRank inputNodes graph highestRank = taxonomySubTree
         ledges = nub (concatMap (out graph) (map fst lnodes))
         taxonomySubTree = (mkGraph filteredLNodes ledges) :: (Gr SimpleTaxon Double)
 
+-- | Extract parent node iwth specified Rank
+getParentbyRank :: Node -> (Gr SimpleTaxon Double) -> Maybe Rank -> Maybe (Node, SimpleTaxon)
+getParentbyRank inputNode graph requestedRank = filteredLNode
+  where path = sp (inputNode :: Node) (1 :: Node) graph
+        nodeContext = map (context graph) path
+        lnode = map labNode' nodeContext
+        filteredLNode = findNodeByRank requestedRank lnode
+           
 filterNodesByLevel :: Maybe Int -> [(Node, SimpleTaxon)] -> (Gr SimpleTaxon Double) -> [(Node, SimpleTaxon)]
 filterNodesByLevel levelNumber inputNodes graph
   | (isJust levelNumber) = filteredNodes
@@ -248,6 +256,13 @@ sortByNodeID (n1, _) (n2, _)
   | n1 > n2 = LT
   | n1 == n2 = EQ
   | otherwise = EQ
+
+findNodeByRank :: Maybe Rank -> [(t, SimpleTaxon)] -> Maybe (t, SimpleTaxon)
+findNodeByRank requestedRank inputNodes
+  | (isJust requestedRank) = filteredNodes
+  | otherwise = Nothing
+    where filteredNodes = find (\(_,t) -> simpleRank t == (fromJust requestedRank)) inputNodes
+
 
 filterNodesByRank :: Maybe Rank -> [(t, SimpleTaxon)] -> [(t, SimpleTaxon)]
 filterNodesByRank highestRank inputNodes

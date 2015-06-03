@@ -1,8 +1,17 @@
 -- | This module contains data structures for
 --   taxonomy data
 
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE RecordWildCards #-}
+
 module Bio.TaxonomyData where
+import Prelude
 import qualified Data.ByteString as B
+import qualified Data.Aeson as A
+import qualified Data.Vector as V
+import Data.Graph.Inductive
+import qualified Data.Text as T
+import qualified Data.Text.Encoding
 
 data SimpleTaxon = SimpleTaxon
   {
@@ -253,3 +262,12 @@ data Gene2Accession = Gene2Accession
     maturePeptideAccessionVersion :: String,
     maturePeptideGi :: String
   } deriving (Show, Eq, Read)  
+
+instance A.ToJSON (Gr SimpleTaxon Double) where
+  toJSON inputGraph = simpleTaxonJSONValue inputGraph 0
+
+simpleTaxonJSONValue :: Gr SimpleTaxon Double -> Node -> A.Value
+simpleTaxonJSONValue inputGraph node = jsonValue
+  where jsonValue = A.object [(T.pack "name") A..= (maybe (T.pack "notFound") (\a -> Data.Text.Encoding.decodeUtf8 (simpleScientificName a)) (lab inputGraph node)),(T.pack "children") A..= children]
+        childNodes = suc inputGraph node
+        children = A.Array (V.fromList (map (simpleTaxonJSONValue inputGraph) childNodes))
