@@ -1,4 +1,4 @@
--- | This module contains data structures for
+www.c-- | This module contains data www.structures for
 --   taxonomy data
 
 {-# LANGUAGE FlexibleInstances #-}
@@ -264,10 +264,15 @@ data Gene2Accession = Gene2Accession
   } deriving (Show, Eq, Read)  
 
 instance A.ToJSON (Gr SimpleTaxon Double) where
-  toJSON inputGraph = simpleTaxonJSONValue inputGraph 0
+  toJSON inputGraph = simpleTaxonJSONValue inputGraph 1
 
 simpleTaxonJSONValue :: Gr SimpleTaxon Double -> Node -> A.Value
 simpleTaxonJSONValue inputGraph node = jsonValue
-  where jsonValue = A.object [(T.pack "name") A..= (maybe (T.pack "notFound") (\a -> Data.Text.Encoding.decodeUtf8 (simpleScientificName a)) (lab inputGraph node)),(T.pack "children") A..= children]
+  where jsonValue = A.object [currentScientificName,(T.pack "children") A..= children]
         childNodes = suc inputGraph node
+        currentLabel = lab inputGraph node
+        currentScientificName = (T.pack "name") A..= (maybe (T.pack "notFound") (\a -> Data.Text.Encoding.decodeUtf8 (simpleScientificName a)) currentLabel)
         children = A.Array (V.fromList (map (simpleTaxonJSONValue inputGraph) childNodes))
+        --jsonValue = A.object [currentScientificName,currentId,currentRank,(T.pack "children") A..= children]
+        --currentId = (T.pack "id") A..= (maybe (T.pack "notFound") (\a -> T.pack (show (simpleTaxId a))) currentLabel)
+        --currentRank = (T.pack "rank") A..= (maybe (T.pack "notFound") (\a -> T.pack (show (simpleRank a))) currentLabel)

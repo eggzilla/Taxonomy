@@ -35,7 +35,7 @@ library
   ghc-options:         -Wall -O2 -fno-warn-unused-do-bind
 
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.5 && <5, parsec, either-unwrap, fgl, text, graphviz, bytestring
+  build-depends:       base >=4.5 && <5, parsec, either-unwrap, fgl, text, graphviz, bytestring, aeson, vector
 
   -- Directories containing source files.
   hs-source-dirs:      src
