@@ -36,6 +36,7 @@ import Text.Parsec.Prim (runP)
 import Text.ParserCombinators.Parsec
 import Control.Monad
 import Data.List
+import qualified Data.Vector as V
 import Data.Maybe    
 import Data.Either
 import qualified Data.Either.Unwrap as E
@@ -89,11 +90,13 @@ makeColorList treeNumber = cList
 readNamedTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
 readNamedTaxonomy directoryPath = do
   nodeNames <- readNCBITaxNames (directoryPath ++ "names.dmp")
+  let scientificNameBS = B.pack ("scientific name")
   if (isLeft nodeNames)
      then do 
        return (Left (E.fromLeft nodeNames))
      else do
-       let filteredNodeNames = filter (\a -> nameClass a == B.pack ("scientific name")) (E.fromRight nodeNames)
+       let nodeNamesVector = V.fromList (E.fromRight nodeNames)
+       let filteredNodeNames = V.filter (\a -> nameClass a == scientificNameBS) nodeNamesVector
        taxonomyGraph <- parseFromFileEncISO88591 (genParserNamedTaxonomyGraph filteredNodeNames) (directoryPath ++ "nodes.dmp")
        return taxonomyGraph
 
@@ -110,27 +113,27 @@ genParserTaxonomyGraph = do
   nodesEdges <- many1 (try (genParserGraphNodeEdge))
   optional eof
   let (nodesList,edgesList) =  unzip nodesEdges
-  let taxedges = filter (\(a,b,_) -> a /= b) (concat edgesList)
-  let taxnodes = concat nodesList
-  return (mkGraph taxnodes taxedges)
+  let taxedges = filter (\(a,b,_) -> a /= b) edgesList
+  --let taxnodes = concat nodesList
+  --return (mkGraph taxnodes taxedges)
+  return (mkGraph nodesList taxedges)
 
-genParserNamedTaxonomyGraph :: [TaxName] -> GenParser Char st (Gr SimpleTaxon Double)
+genParserNamedTaxonomyGraph :: V.Vector TaxName -> GenParser Char st (Gr SimpleTaxon Double)
 genParserNamedTaxonomyGraph filteredNodeNames = do
   nodesEdges <- many1 (try (genParserGraphNodeEdge))
   optional eof
-  let (nodesList,edgesList) =  unzip nodesEdges
-  let taxedges = filter (\(a,b,_) -> a /= b) (concat edgesList)
-  let taxnodes = concat nodesList
-  let taxnamednodes = map (setNodeScientificName filteredNodeNames) taxnodes
-  return (mkGraph taxnamednodes taxedges)
+  let (nodesList,edgesList) = unzip nodesEdges
+  let taxedges = filter (\(a,b,_) -> a /= b) edgesList
+  let taxnamednodes = map (setNodeScientificName filteredNodeNames) nodesList
+  return $! mkGraph taxnamednodes taxedges
 
-setNodeScientificName :: [TaxName] -> (t, SimpleTaxon) -> (t, SimpleTaxon)
+setNodeScientificName :: V.Vector TaxName -> (t, SimpleTaxon) -> (t, SimpleTaxon)
 setNodeScientificName inputTaxNames (inputNode,inputTaxon) = outputNode
-  where maybeRetrievedName = find (\a -> nameTaxId a == simpleTaxId inputTaxon) inputTaxNames
+  where maybeRetrievedName = V.find (\a -> nameTaxId a == simpleTaxId inputTaxon) inputTaxNames
         retrievedName = maybe (B.pack "no name") nameTxt maybeRetrievedName
         outputNode = (inputNode,inputTaxon{simpleScientificName = retrievedName})
 
-genParserGraphNodeEdge :: GenParser Char st ([(Int,SimpleTaxon)],[(Int,Int,Double)])
+genParserGraphNodeEdge :: GenParser Char st ((Int,SimpleTaxon),(Int,Int,Double))
 genParserGraphNodeEdge = do
   _simpleTaxId <- many1 digit
   tab
@@ -143,48 +146,11 @@ genParserGraphNodeEdge = do
   _simpleRank <- many1 (noneOf "\t")
   tab
   char ('|')
-  tab 
-  optionMaybe (many1 (noneOf "\t"))
-  tab
-  char ('|')
-  tab
-  many1 digit
-  tab
-  char ('|')
-  tab
-  many1 digit
-  tab
-  char ('|')
-  tab 
-  many1 digit
-  tab
-  char ('|')
-  tab
-  many1 digit
-  tab
-  char ('|')
-  tab
-  many1 digit
-  tab
-  char ('|')
-  tab
-  many1 digit
-  tab
-  char ('|')
-  tab
-  many1 digit
-  tab
-  char ('|')
-  tab
-  many1 digit 
-  tab
-  char ('|')
-  tab
-  optionMaybe (many1 (noneOf "\t"))
-  tab
-  char ('|')
+  many1 (noneOf "\n")
   char ('\n')
-  return $ ([((readInt _simpleTaxId),SimpleTaxon (readInt _simpleTaxId) B.empty (readInt _simpleParentTaxId) (readRank _simpleRank))],[((readInt _simpleTaxId),(readInt _simpleParentTaxId),(1 :: Double))])
+  let _simpleTaxIdInt = readInt _simpleTaxId
+  let _simpleParentTaxIdInt = readInt _simpleParentTaxId
+  return $! ((_simpleTaxIdInt,SimpleTaxon _simpleTaxIdInt B.empty _simpleParentTaxIdInt (readRank _simpleRank)),(_simpleTaxIdInt,_simpleParentTaxIdInt,(1 :: Double)))
       
 -- | Extract a subtree correpsonding to input node paths to root. Only nodes in level number distance to root are included
 compareSubTrees :: [(Gr SimpleTaxon Double)] -> (Int,(Gr CompareTaxon Double))
@@ -383,7 +349,7 @@ genParserNCBITaxMergedNodes = do
 genParserNCBITaxNames :: GenParser Char st [TaxName]
 genParserNCBITaxNames = do
   names <- many1 genParserNCBITaxName
-  return $ names
+  return $! names
 
 genParserNCBITaxNodes :: GenParser Char st [TaxNode]
 genParserNCBITaxNodes = do
@@ -508,7 +474,7 @@ genParserNCBITaxName = do
   tab
   char ('|')
   newline
-  return $ TaxName (readInt _taxId) (B.pack _nameTxt) (maybe B.empty B.pack _uniqueName) (B.pack _nameClass)
+  return $! TaxName (readInt _taxId) (B.pack _nameTxt) (maybe B.empty B.pack _uniqueName) (B.pack _nameClass)
 
 genParserNCBISimpleTaxon :: GenParser Char st SimpleTaxon
 genParserNCBISimpleTaxon = do
@@ -564,7 +530,7 @@ genParserNCBISimpleTaxon = do
   tab
   char ('|')
   char ('\n')
-  return $ SimpleTaxon (readInt _simpleTaxId) B.empty (readInt _simpleParentTaxId) (readRank _simpleRank) 
+  return $! SimpleTaxon (readInt _simpleTaxId) B.empty (readInt _simpleParentTaxId) (readRank _simpleRank) 
 
 genParserNCBITaxNode :: GenParser Char st TaxNode
 genParserNCBITaxNode = do
