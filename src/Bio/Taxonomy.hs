@@ -3,11 +3,11 @@
 module Bio.Taxonomy (                      
                        module Bio.TaxonomyData,
                        getParentbyRank,
-                       drawTreeComparison,
+---                       drawTreeComparison,
                        compareSubTrees,    
                        extractTaxonomySubTreebyLevel,
                        extractTaxonomySubTreebyRank,
-                       drawTaxonomy,    
+---                      drawTaxonomy,    
                        readTaxonomy,
                        readNamedTaxonomy,            
                        parseTaxonomy,
@@ -41,10 +41,10 @@ import Data.Maybe
 import Data.Either
 import qualified Data.Either.Unwrap as E
 import Data.Graph.Inductive
-import qualified Data.GraphViz as GV
-import qualified Data.GraphViz.Printing as GVP
-import qualified Data.GraphViz.Attributes.Colors as GVAC
-import qualified Data.GraphViz.Attributes.Complete as GVA
+---import qualified Data.GraphViz as GV
+---import qualified Data.GraphViz.Printing as GVP
+---import qualified Data.GraphViz.Attributes.Colors as GVAC
+---import qualified Data.GraphViz.Attributes.Complete as GVA
 import qualified Data.Text.Lazy as TL
 import qualified Data.ByteString.Char8 as B
 --------------------------------------------------------
@@ -52,39 +52,39 @@ import qualified Data.ByteString.Char8 as B
 --fgl graph representation
 
 -- | draw Graph in dot format
-drawTaxonomy :: Gr SimpleTaxon Double -> String
-drawTaxonomy inputGraph = do
-  let params = GV.nonClusteredParams {GV.isDirected       = True
-                       , GV.globalAttributes = [GV.GraphAttrs [GVA.Size (GVA.GSize (20 :: Double) (Just (20 :: Double)) False)]]
-                       , GV.isDotCluster     = const True
-                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (simpleRank l)) ++ "\n" ++ (B.unpack (simpleScientificName l))))]
-                       , GV.fmtEdge          = const []
-                       }
-  let dotFormat = GV.graphToDot params inputGraph
-  let dottext = GVP.renderDot $ GVP.toDot dotFormat
-  TL.unpack dottext
+---drawTaxonomy :: Gr SimpleTaxon Double -> String
+---drawTaxonomy inputGraph = do
+---  let params = GV.nonClusteredParams {GV.isDirected       = True
+---                       , GV.globalAttributes = [GV.GraphAttrs [GVA.Size (GVA.GSize (20 :: Double) (Just (20 :: Double)) False)]]
+---                       , GV.isDotCluster     = const True
+---                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (simpleRank l)) ++ "\n" ++ (B.unpack (simpleScientificName l))))]
+---                       , GV.fmtEdge          = const []
+---                       }
+---  let dotFormat = GV.graphToDot params inputGraph
+---  let dottext = GVP.renderDot $ GVP.toDot dotFormat
+---  TL.unpack dottext
 
 -- | draw Comparison graph in dot format
-drawTreeComparison :: (Int,(Gr CompareTaxon Double)) -> String
-drawTreeComparison (treeNumber,inputGraph) = do
-  let cList = makeColorList treeNumber 
-  let params = GV.nonClusteredParams {GV.isDirected = True
-                       , GV.globalAttributes = []
-                       , GV.isDotCluster = const True
-                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (compareRank l)) ++ "\n" ++ (B.unpack (compareScientificName l)))), GV.style GV.wedged, GVA.Color (selectColors (inTree l) cList)]
-                       , GV.fmtEdge = const []
-                       }
-  let dotFormat = GV.graphToDot params (grev inputGraph)
-  let dottext = GVP.renderDot $ GVP.toDot dotFormat
-  TL.unpack dottext
+---drawTreeComparison :: (Int,(Gr CompareTaxon Double)) -> String
+---drawTreeComparison (treeNumber,inputGraph) = do
+---  let cList = makeColorList treeNumber 
+---  let params = GV.nonClusteredParams {GV.isDirected = True
+---                      , GV.globalAttributes = []
+---                       , GV.isDotCluster = const True
+---                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack ((show (compareRank l)) ++ "\n" ++ (B.unpack (compareScientificName l)))), GV.style GV.wedged, GVA.Color (selectColors (inTree l) cList)]
+---                       , GV.fmtEdge = const []
+---                       }
+---  let dotFormat = GV.graphToDot params (grev inputGraph)
+---  let dottext = GVP.renderDot $ GVP.toDot dotFormat
+---  TL.unpack dottext
 
-selectColors :: [Int] -> [GVA.Color] -> GVAC.ColorList
-selectColors inTrees currentColorList = GVAC.toColorList (map (\i -> currentColorList !! i) inTrees)
+---selectColors :: [Int] -> [GVA.Color] -> GVAC.ColorList
+---selectColors inTrees currentColorList = GVAC.toColorList (map (\i -> currentColorList !! i) inTrees)
 
-makeColorList :: Int -> [GVA.Color]
-makeColorList treeNumber = cList
-  where cList = map (\i -> GVAC.HSV (((fromIntegral i)/(fromIntegral neededColors)) * 0.708) 0.5 1.0)  [0..neededColors]
-        neededColors = treeNumber - 1
+---makeColorList :: Int -> [GVA.Color]
+---makeColorList treeNumber = cList
+---  where cList = map (\i -> GVAC.HSV (((fromIntegral i)/(fromIntegral neededColors)) * 0.708) 0.5 1.0)  [0..neededColors]
+---        neededColors = treeNumber - 1
 
 -- | parse Taxonomy from input filePath                      
 readNamedTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
@@ -174,7 +174,7 @@ annotateTaxonDifference indexedTreesNodes mergedtreeNode = comparedNode
   where comparedNode = ((simpleTaxId (snd mergedtreeNode)),(CompareTaxon (simpleScientificName (snd mergedtreeNode)) (simpleRank (snd mergedtreeNode)) currentInTree))
         currentInTree = concatMap (\(i,treeNodes) -> if (elem mergedtreeNode treeNodes) then [i] else []) indexedTreesNodes
         
--- | Extract a subtree correpsonding to input node paths to root. Only nodes in level number distance to root are included
+-- | Extract a subtree corresponding to input node paths to root. Only nodes in level number distance to root are included
 extractTaxonomySubTreebyLevel :: [Node] -> (Gr SimpleTaxon Double) -> Maybe Int -> (Gr SimpleTaxon Double)
 extractTaxonomySubTreebyLevel inputNodes graph levelNumber = taxonomySubTree
   where paths = nub (concatMap (\n -> (sp (n :: Node) (1 :: Node) graph)) inputNodes)
