@@ -1,4 +1,4 @@
-www.c-- | This module contains data www.structures for
+-- | This module contains data structures for
 --   taxonomy data
 
 {-# LANGUAGE FlexibleInstances #-}
