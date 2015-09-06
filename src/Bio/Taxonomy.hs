@@ -92,7 +92,8 @@ readNamedTaxonomy directoryPath = do
   nodeNames <- readNCBITaxNames (directoryPath ++ "names.dmp")
   let scientificNameBS = B.pack "scientific name"
   if isLeft nodeNames
-     then Left (E.fromLeft nodeNames)
+     then do
+     	  return (Left (E.fromLeft nodeNames))
      else do
        let nodeNamesVector = V.fromList (E.fromRight nodeNames)
        let filteredNodeNames = V.filter (\a -> nameClass a == scientificNameBS) nodeNamesVector
@@ -114,7 +115,7 @@ genParserTaxonomyGraph = do
   let taxedges = filter (\(a,b,_) -> a /= b) edgesList
   --let taxnodes = concat nodesList
   --return (mkGraph taxnodes taxedges)
-  return (mkGraph nodesList taxedges)
+  return $! mkGraph nodesList taxedges
 
 genParserNamedTaxonomyGraph :: V.Vector TaxName -> GenParser Char st (Gr SimpleTaxon Double)
 genParserNamedTaxonomyGraph filteredNodeNames = do
