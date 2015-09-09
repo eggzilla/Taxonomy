@@ -12,6 +12,8 @@ import Data.Graph.Inductive
 import qualified Data.Text as T
 import qualified Data.Text.Encoding
 
+-- | SimpleTaxon only contains the most relevant fields of a taxonomy entry.
+--   For all annotaded fields use the Taxon datatype and its associated functions
 data SimpleTaxon = SimpleTaxon
   {
    -- node id in GenBank
@@ -24,6 +26,7 @@ data SimpleTaxon = SimpleTaxon
   }
   deriving (Show, Read, Eq)
 
+-- | Datastructure for tree comparisons
 data CompareTaxon = CompareTaxon
   {
    compareScientificName :: B.ByteString,
@@ -49,11 +52,13 @@ data Taxon = Taxon
   ,  pubDate :: String
   } deriving (Show, Eq)
 
+
 data TaxonName = TaxonName
   {  classCDE :: String
   ,  dispName :: String
   } deriving (Show, Eq)
 
+-- | Lineage Taxons denote all parent Taxonomy nodes of a node retrieved by Entrez fetch
 data LineageTaxon = LineageTaxon
   {  lineageTaxId :: Int
   ,  lineageScienticName :: String
@@ -74,6 +79,7 @@ data NCBITaxDump = NCBITaxDump
   }
   deriving (Show, Read, Eq)
 
+-- | Datastructure for entries of Taxonomy database dump citations file
 data TaxCitation = TaxCitation
   {
    -- the unique id of citation
@@ -98,6 +104,7 @@ data TaxCitation = TaxCitation
   }
   deriving (Show, Read, Eq)
 
+-- | Datastructure for entries of Taxonomy database dump deleted nodes file
 data TaxDelNode = TaxDelNode
   {
    -- deleted node id
@@ -105,6 +112,7 @@ data TaxDelNode = TaxDelNode
   }
   deriving (Show, Read, Eq)
 
+-- | Datastructure for entries of Taxonomy database dump division file
 data TaxDivision = TaxDivision
   {
    -- taxonomy database division id
@@ -117,6 +125,7 @@ data TaxDivision = TaxDivision
   }
   deriving (Show, Read, Eq)
 
+-- | Datastructure for entries of Taxonomy database dump gencode file
 data TaxGenCode = TaxGenCode
   {
    -- GenBank genetic code id
@@ -132,6 +141,7 @@ data TaxGenCode = TaxGenCode
   }
   deriving (Show, Read, Eq)
 
+-- | Datastructure for entries of Taxonomy database dump mergednodes file
 data TaxMergedNode = TaxMergedNode
   {
    -- id of nodes which has been merged
@@ -141,6 +151,7 @@ data TaxMergedNode = TaxMergedNode
   }
   deriving (Show, Read, Eq)
 
+-- | Datastructure for entries of Taxonomy database dump names file
 data TaxName = TaxName
   {
    -- the id of node associated with this name
@@ -206,6 +217,7 @@ readsRank input -- = [(Domain x)| x <- reads input ]
    | input == "no rank" = [(Norank,"")]
    | otherwise = [(Norank,"")]  
 
+-- | Datastructure for entries of Taxonomy database dump nodes file
 data TaxNode = TaxNode
   {
    -- node id in GenBank
