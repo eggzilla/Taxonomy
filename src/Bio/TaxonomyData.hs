@@ -2,7 +2,6 @@
 --   taxonomy data
 
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Bio.TaxonomyData where
 import Prelude
@@ -158,9 +157,9 @@ data TaxName = TaxName
 -- | Taxonomic ranks: NCBI uses the uncommon Speciessubgroup 
 data Rank = Norank | Form | Variety | Infraspecies | Subspecies | Speciessubgroup | Species | Speciesgroup | Superspecies | Series | Section | Subgenus | Genus | Subtribe | Tribe | Supertribe | Subfamily | Family | Superfamily | Parvorder | Infraorder | Suborder | Order | Superorder | Magnorder | Cohort | Legion | Parvclass | Infraclass | Subclass | Class | Superclass | Microphylum | Infraphylum | Subphylum | Phylum | Superphylum | Infrakingdom | Subkingdom | Kingdom | Superkingdom | Domain deriving (Eq, Ord, Show, Bounded, Enum)
 
-readsRank :: [Char] -> [(Rank, [Char])]
+readsRank :: String -> [(Rank, String)]
 instance Read Rank where
-  readsPrec _ input = readsRank input
+  readsPrec _ = readsRank 
 
 readsRank input -- = [(Domain x)| x <- reads input ]
    | input == "domain" = [(Domain,"")]
@@ -268,10 +267,10 @@ instance A.ToJSON (Gr SimpleTaxon Double) where
 
 simpleTaxonJSONValue :: Gr SimpleTaxon Double -> Node -> A.Value
 simpleTaxonJSONValue inputGraph node = jsonValue
-  where jsonValue = A.object [currentScientificName,(T.pack "children") A..= children]
+  where jsonValue = A.object [currentScientificName,T.pack "children" A..= children]
         childNodes = suc inputGraph node
         currentLabel = lab inputGraph node
-        currentScientificName = (T.pack "name") A..= (maybe (T.pack "notFound") (\a -> Data.Text.Encoding.decodeUtf8 (simpleScientificName a)) currentLabel)
+        currentScientificName = T.pack "name" A..= maybe (T.pack "notFound") (Data.Text.Encoding.decodeUtf8 . simpleScientificName) currentLabel
         children = A.Array (V.fromList (map (simpleTaxonJSONValue inputGraph) childNodes))
         --jsonValue = A.object [currentScientificName,currentId,currentRank,(T.pack "children") A..= children]
         --currentId = (T.pack "id") A..= (maybe (T.pack "notFound") (\a -> T.pack (show (simpleTaxId a))) currentLabel)

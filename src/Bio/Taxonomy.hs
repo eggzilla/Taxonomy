@@ -93,8 +93,7 @@ readNamedTaxonomy directoryPath = do
   nodeNames <- readNCBITaxNames (directoryPath ++ "names.dmp")
   let scientificNameBS = B.pack "scientific name"
   if isLeft nodeNames
-     then do
-     	  return (Left (E.fromLeft nodeNames))
+     then return (Left (E.fromLeft nodeNames))
      else do
        let nodeNamesVector = V.fromList (E.fromRight nodeNames)
        let filteredNodeNames = V.filter (\a -> nameClass a == scientificNameBS) nodeNamesVector
@@ -140,8 +139,6 @@ genParserGraphNodeEdge = do
   _simpleParentTaxId <- many1 digit
   string "\t|\t"
   _simpleRank <- many1 (noneOf "\t")
-  tab
-  char '|'
   many1 (noneOf "\n")
   char '\n'
   let _simpleTaxIdInt = readInt _simpleTaxId
@@ -168,13 +165,12 @@ annotateTaxonsDifference  treesNodes mergedtreeNodes = comparedNodes
 annotateTaxonDifference :: [(Int,[LNode SimpleTaxon])] -> LNode SimpleTaxon -> LNode CompareTaxon
 annotateTaxonDifference indexedTreesNodes mergedtreeNode = comparedNode
   where comparedNode = (simpleTaxId (snd mergedtreeNode),CompareTaxon (simpleScientificName (snd mergedtreeNode)) (simpleRank (snd mergedtreeNode)) currentInTree)
-        --currentInTree = concatMap (\(i,treeNodes) -> if mergedtreeNode `elem` treeNodes then [i] else []) indexedTreesNodes
-	currentInTree = concatMap (\(i,treeNodes) -> [i | mergedtreeNode `elem` treeNodes]) indexedTreesNodes
+        currentInTree = concatMap (\(i,treeNodes) -> [i | mergedtreeNode `elem` treeNodes]) indexedTreesNodes
         
 -- | Extract a subtree corresponding to input node paths to root. Only nodes in level number distance to root are included
 extractTaxonomySubTreebyLevel :: [Node] -> Gr SimpleTaxon Double -> Maybe Int -> Gr SimpleTaxon Double
 extractTaxonomySubTreebyLevel inputNodes graph levelNumber = taxonomySubTree
-  where paths = nub (concatMap (\n -> sp (n :: Node) (1 :: Node) graph) inputNodes)
+  where paths = nub (concatMap (getPath (1 :: Node) graph) inputNodes)
         contexts = map (context graph) paths
         lnodes = map labNode' contexts
         ledges = nub (concatMap (out graph . fst) lnodes)
@@ -186,12 +182,15 @@ extractTaxonomySubTreebyLevel inputNodes graph levelNumber = taxonomySubTree
 -- | Extract a subtree corresponding to input node paths to root. If a Rank is provided, all node that are less or equal are omitted
 extractTaxonomySubTreebyRank :: [Node] -> Gr SimpleTaxon Double -> Maybe Rank -> Gr SimpleTaxon Double
 extractTaxonomySubTreebyRank inputNodes graph highestRank = taxonomySubTree
-  where paths = nub (concatMap (\n -> sp (n :: Node) (1 :: Node) graph) inputNodes)
+  where paths = nub (concatMap (getPath (1 :: Node) graph) inputNodes)
         contexts = map (context graph) paths
         lnodes = map labNode' contexts
         filteredLNodes = filterNodesByRank highestRank lnodes
-        ledges = nub (concatMap (out graph . fst) lnodes)
-        taxonomySubTree = mkGraph filteredLNodes ledges :: Gr SimpleTaxon Double
+        filteredledges = nub (concatMap (out graph . fst) filteredLNodes)
+        taxonomySubTree = mkGraph filteredLNodes filteredledges :: Gr SimpleTaxon Double
+
+getPath :: Node -> Gr SimpleTaxon Double -> Node -> Path
+getPath root graph node =  sp node root graph
 
 -- | Extract parent node iwth specified Rank
 getParentbyRank :: Node -> Gr SimpleTaxon Double -> Maybe Rank -> Maybe (Node, SimpleTaxon)
@@ -463,8 +462,6 @@ genParserNCBITaxNode = do
   char '|'
   char '\n'
   return $ TaxNode (readInt _taxId) (readInt _parentTaxId) (readRank _rank) _emblCode _divisionId (readBool _inheritedDivFlag) _geneticCodeId (readBool _inheritedGCFlag) _mitochondrialGeneticCodeId (readBool _inheritedMGCFlag) (readBool _genBankHiddenFlag) (readBool _hiddenSubtreeRootFlag) _comments
-
-
 
 --Auxiliary functions
 readInt :: String -> Int
