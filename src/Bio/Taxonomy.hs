@@ -49,9 +49,8 @@ import qualified Data.Text.Lazy as TL
 import qualified Data.ByteString.Char8 as B
 --------------------------------------------------------
 
---fgl graph representation
 
--- | draw Graph in dot format
+-- | Draw graph in dot format
 drawTaxonomy :: Gr SimpleTaxon Double -> String
 drawTaxonomy inputGraph = do
   let params = GV.nonClusteredParams {GV.isDirected       = True
@@ -64,7 +63,7 @@ drawTaxonomy inputGraph = do
   let dottext = GVP.renderDot $ GVP.toDot dotFormat
   TL.unpack dottext
 
--- | draw Comparison graph in dot format
+-- | Draw tree comparison graph in dot format
 drawTreeComparison :: (Int,Gr CompareTaxon Double) -> String
 drawTreeComparison (treeNumber,inputGraph) = do
   let cList = makeColorList treeNumber 
@@ -78,15 +77,17 @@ drawTreeComparison (treeNumber,inputGraph) = do
   let dottext = GVP.renderDot $ GVP.toDot dotFormat
   TL.unpack dottext
 
+-- | Colors from color list are selected according to in which of the compared trees the node is contained.
 selectColors :: [Int] -> [GVA.Color] -> GVAC.ColorList
 selectColors inTrees currentColorList = GVAC.toColorList (map (\i -> currentColorList !! i) inTrees)
 
+-- | A color list is sampled from the spectrum according to how many trees are compared.
 makeColorList :: Int -> [GVA.Color]
 makeColorList treeNumber = cList
   where cList = map (\i -> GVAC.HSV ((fromIntegral i/fromIntegral neededColors) * 0.708) 0.5 1.0)  [0..neededColors]
         neededColors = treeNumber - 1
 
--- | parse Taxonomy from input filePath                      
+-- | NCBI taxonomy dump nodes and names in the input directory path are parsed and a SimpleTaxon tree with scientific names for each node is generated.  
 readNamedTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
 readNamedTaxonomy directoryPath = do
   nodeNames <- readNCBITaxNames (directoryPath ++ "names.dmp")
@@ -99,11 +100,11 @@ readNamedTaxonomy directoryPath = do
        let filteredNodeNames = V.filter (\a -> nameClass a == scientificNameBS) nodeNamesVector
        parseFromFileEncISO88591 (genParserNamedTaxonomyGraph filteredNodeNames) (directoryPath ++ "nodes.dmp")
 
--- | parse Taxonomy from file path
+-- | NCBI taxonomy dump nodes and names in the input directory path are parsed and a SimpleTaxon tree is generated. 
 readTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
 readTaxonomy = parseFromFileEncISO88591 genParserTaxonomyGraph 
 
--- | parse Taxonomy from input string
+-- | NCBI taxonomy dump nodes and names in the input directory path are parsed and a SimpleTaxon tree is generated.
 parseTaxonomy :: String -> Either ParseError (Gr SimpleTaxon Double)
 parseTaxonomy = parse genParserTaxonomyGraph "parseTaxonomy"
 
@@ -343,7 +344,6 @@ genParserNCBITaxNodes = many1 genParserNCBITaxNode
 genParserNCBISimpleTaxons :: GenParser Char st [SimpleTaxon]
 genParserNCBISimpleTaxons = many1 genParserNCBISimpleTaxon
   
-----------------------------
 
 genParserNCBITaxCitation :: GenParser Char st TaxCitation
 genParserNCBITaxCitation = do
