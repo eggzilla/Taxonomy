@@ -22,6 +22,8 @@ description:         Haskell cabal Taxonomy libary contains tools, parsers, data
                      <<http://www.tbi.univie.ac.at/~egg/taxonomy.svg dot>> 
                      .
                      or via json-format (<http://d3js.org/d3js>).
+		     .
+		     The <https://hackage.haskell.org/package/TaxonomyTools TaxonomyTools> package contains tools based on this package.
                      
 license:             GPL-3
 license-file:        LICENSE
