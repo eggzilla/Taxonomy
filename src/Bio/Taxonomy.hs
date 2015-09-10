@@ -1,13 +1,17 @@
--- | Parse and process taxonomy data
-
-module Bio.Taxonomy (                      
+-- | Functions for parsing, processing and visualization of taxonomy data.
+--
+-- === Usage example:
+-- * Read in taxonomy data
+--   
+-- * Process data
+--
+-- * Visualize result
+--
+module Bio.Taxonomy (  -- * Datatypes
+                       -- Datatypes used to represent taxonomy data
                        module Bio.TaxonomyData,
-                       getParentbyRank,
-                       drawTreeComparison,
-                       compareSubTrees,    
-                       extractTaxonomySubTreebyLevel,
-                       extractTaxonomySubTreebyRank,
-                       drawTaxonomy,    
+                       -- * Parsing
+                       -- Functions prefixed with "read" read from filepaths, functions with parse from Haskell Strings. 
                        readTaxonomy,
                        readNamedTaxonomy,            
                        parseTaxonomy,
@@ -27,7 +31,15 @@ module Bio.Taxonomy (
                        readNCBITaxNodes,
                        parseNCBISimpleTaxons,
                        readNCBISimpleTaxons,
-                       readNCBITaxonomyDatabase
+                       readNCBITaxonomyDatabase,
+                       -- * Processing
+                       compareSubTrees,    
+                       extractTaxonomySubTreebyLevel,
+                       extractTaxonomySubTreebyRank,
+                       -- * Visualization
+                       getParentbyRank,
+                       drawTreeComparison,
+                       drawTaxonomy
                       ) where
 import Prelude 
 import System.IO 
@@ -48,6 +60,7 @@ import qualified Data.GraphViz.Attributes.Complete as GVA
 import qualified Data.Text.Lazy as TL
 import qualified Data.ByteString.Char8 as B
 --------------------------------------------------------
+-- *  Visualization
 
 
 -- | Draw graph in dot format
@@ -98,6 +111,8 @@ readNamedTaxonomy directoryPath = do
        let nodeNamesVector = V.fromList (E.fromRight nodeNames)
        let filteredNodeNames = V.filter (\a -> nameClass a == scientificNameBS) nodeNamesVector
        parseFromFileEncISO88591 (genParserNamedTaxonomyGraph filteredNodeNames) (directoryPath ++ "nodes.dmp")
+
+-- * Functions for parsing taxonomy
 
 -- | NCBI taxonomy dump nodes and names in the input directory path are parsed and a SimpleTaxon tree is generated. 
 readTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
