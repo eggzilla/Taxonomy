@@ -5,7 +5,7 @@ name:                Taxonomy
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             1.0.0
+version:             1.0.1
 synopsis:            Libary for parsing, processing and vizualization of taxonomy data
 description:         Haskell cabal Taxonomy libary contains tools, parsers, datastructures and visualisation
                      for the NCBI (National Center for Biotechnology Information) Taxonomy datasources.
@@ -40,8 +40,8 @@ source-repository head
 
 source-repository this
   type:     git
-  location: https://github.com/eggzilla/Taxonomy/tree/v1.0.0
-  tag:      v1.0.0
+  location: https://github.com/eggzilla/Taxonomy/tree/v1.0.1
+  tag:      v1.0.1
 
 library
   -- Modules exported by the library.

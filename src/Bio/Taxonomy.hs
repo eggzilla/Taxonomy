@@ -59,7 +59,6 @@ import Control.Monad
 import Data.List
 import qualified Data.Vector as V
 import Data.Maybe    
-import Data.Either
 import qualified Data.Either.Unwrap as E
 import Data.Graph.Inductive
 import qualified Data.GraphViz as GV
@@ -69,7 +68,7 @@ import qualified Data.GraphViz.Attributes.Complete as GVA
 import qualified Data.Text.Lazy as TL
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
-import qualified Data.Aeson.Encode as E
+import qualified Data.Aeson.Encode as AE
 --------------------------------------------------------
 
 ---------------------------------------
@@ -80,7 +79,7 @@ readNamedTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))
 readNamedTaxonomy directoryPath = do
   nodeNames <- readNCBITaxNames (directoryPath ++ "names.dmp")
   let scientificNameBS = B.pack "scientific name"
-  if isLeft nodeNames
+  if E.isLeft nodeNames
      then return (Left (E.fromLeft nodeNames))
      else do
        let nodeNamesVector = V.fromList (E.fromRight nodeNames)
@@ -521,7 +520,7 @@ writeDotTree outputDirectoryPath inputGraph = do
 -- You can visualize the result for example with 3Djs.
 writeJsonTree :: String -> Gr SimpleTaxon Double -> IO ()
 writeJsonTree outputDirectoryPath inputGraph = do
-  let jsonOutput = E.encode (grev inputGraph)
+  let jsonOutput = AE.encode (grev inputGraph)
   L.writeFile (outputDirectoryPath ++ "taxonomy.json") jsonOutput
 
 ---------------------------------------
@@ -580,5 +579,5 @@ checkParsing parseErrors citations taxdelNodes divisons genCodes mergedNodes nam
 
 extractParseError :: Either ParseError a -> String
 extractParseError _parse
-  | isLeft _parse = show (E.fromLeft _parse)
+  | E.isLeft _parse = show (E.fromLeft _parse)
   | otherwise = ""
