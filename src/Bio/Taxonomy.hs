@@ -44,7 +44,7 @@ module Bio.Taxonomy (  -- * Datatypes
                        safeNodePath,
                        getParentbyRank,
                        -- * Visualization
-                       drawTreeComparison,
+                       drawTaxonomyComparison,
                        drawTaxonomy,
                        writeTree,
                        writeDotTree,
@@ -500,8 +500,8 @@ nodeFormatWithoutRank :: (t, SimpleTaxon) -> [GVA.Attribute]
 nodeFormatWithoutRank (_,l) = [GV.textLabel (simpleScientificName l)]
     
 -- | Draw tree comparison graph in dot format. Used in Ids2TreeCompare tool.
-drawTreeComparison :: (Int,Gr CompareTaxon Double) -> Bool -> String
-drawTreeComparison (treeNumber,inputGraph) withRank = do
+drawTaxonomyComparison :: Bool -> (Int,Gr CompareTaxon Double) -> String
+drawTaxonomyComparison withRank (treeNumber,inputGraph) = do
   let cList = makeColorList treeNumber
   let nodeFormating = if withRank then (compareNodeFormatWithRank cList) else (compareNodeFormatWithoutRank cList)
   let params = GV.nonClusteredParams {GV.isDirected = True
