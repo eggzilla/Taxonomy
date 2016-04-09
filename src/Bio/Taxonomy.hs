@@ -65,10 +65,11 @@ import qualified Data.GraphViz as GV
 import qualified Data.GraphViz.Printing as GVP
 import qualified Data.GraphViz.Attributes.Colors as GVAC
 import qualified Data.GraphViz.Attributes.Complete as GVA
-import qualified Data.Text.Lazy as TL
-import qualified Data.ByteString.Char8 as B
+--import qualified Data.Text.Lazy as TL
+--import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.Aeson.Encode as AE
+import qualified Data.Text.Lazy as T
 --------------------------------------------------------
 
 ---------------------------------------
@@ -78,13 +79,17 @@ import qualified Data.Aeson.Encode as AE
 readNamedTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
 readNamedTaxonomy directoryPath = do
   nodeNames <- readNCBITaxNames (directoryPath ++ "names.dmp")
-  let scientificNameBS = B.pack "scientific name"
+  --let scientificNameBS = T.pack "scientific name"
   if E.isLeft nodeNames
      then return (Left (E.fromLeft nodeNames))
      else do
        let nodeNamesVector = V.fromList (E.fromRight nodeNames)
-       let filteredNodeNames = V.filter (\a -> nameClass a == scientificNameBS) nodeNamesVector
+       let filteredNodeNames = V.filter isScientificName nodeNamesVector
        parseFromFileEncISO88591 (genParserNamedTaxonomyGraph filteredNodeNames) (directoryPath ++ "nodes.dmp")
+
+isScientificName :: TaxName -> Bool
+isScientificName name = nameClass name == scientificNameT
+  where scientificNameT = T.pack "scientific name"
 
 -- | NCBI taxonomy dump nodes and names in the input directory path are parsed and a SimpleTaxon tree is generated. 
 readTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
@@ -99,26 +104,35 @@ genParserTaxonomyGraph = do
   nodesEdges <- many1 (try genParserGraphNodeEdge)
   optional eof
   let (nodesList,edgesList) =  unzip nodesEdges
-  let taxedges = filter (\(a,b,_) -> a /= b) edgesList
+  --let taxedges = filter (\(a,b,_) -> a /= b) edgesList
+  let taxedges = filter notLoopEdge  edgesList
   --let taxnodes = concat nodesList
   --return (mkGraph taxnodes taxedges)
   return $! mkGraph nodesList taxedges
 
+         
+notLoopEdge :: (Int,Int,a) -> Bool
+notLoopEdge (a,b,_) = a /= b
+         
 genParserNamedTaxonomyGraph :: V.Vector TaxName -> GenParser Char st (Gr SimpleTaxon Double)
 genParserNamedTaxonomyGraph filteredNodeNames = do
   nodesEdges <- many1 (try genParserGraphNodeEdge)
   optional eof
   let (nodesList,edgesList) = unzip nodesEdges
-  let taxedges = filter (\(a,b,_) -> a /= b) edgesList
+  let taxedges = filter notLoopEdge edgesList
   let taxnamednodes = map (setNodeScientificName filteredNodeNames) nodesList
   return $! mkGraph taxnamednodes taxedges
 
 setNodeScientificName :: V.Vector TaxName -> (t, SimpleTaxon) -> (t, SimpleTaxon)
 setNodeScientificName inputTaxNames (inputNode,inputTaxon) = outputNode
-  where maybeRetrievedName = V.find (\a -> nameTaxId a == simpleTaxId inputTaxon) inputTaxNames
-        retrievedName = maybe (B.pack "no name") nameTxt maybeRetrievedName
+  where maybeRetrievedName = V.find (isTaxNameIdSimpleTaxid inputTaxon) inputTaxNames
+        retrievedName = maybe (T.pack "no name") nameTxt maybeRetrievedName
         outputNode = (inputNode,inputTaxon{simpleScientificName = retrievedName})
 
+isTaxNameIdSimpleTaxid :: SimpleTaxon -> TaxName -> Bool
+isTaxNameIdSimpleTaxid inputTaxon inputTaxName = nameTaxId inputTaxName == simpleTaxId inputTaxon
+
+                     
 genParserGraphNodeEdge :: GenParser Char st ((Int,SimpleTaxon),(Int,Int,Double))
 genParserGraphNodeEdge = do
   _simpleTaxId <- many1 digit
@@ -130,7 +144,7 @@ genParserGraphNodeEdge = do
   char '\n'
   let _simpleTaxIdInt = readInt _simpleTaxId
   let _simpleParentTaxIdInt = readInt _simpleParentTaxId
-  return ((_simpleTaxIdInt,SimpleTaxon _simpleTaxIdInt B.empty _simpleParentTaxIdInt (readRank _simpleRank)),(_simpleTaxIdInt,_simpleParentTaxIdInt,1 :: Double))
+  return ((_simpleTaxIdInt,SimpleTaxon _simpleTaxIdInt T.empty _simpleParentTaxIdInt (readRank _simpleRank)),(_simpleTaxIdInt,_simpleParentTaxIdInt,1 :: Double))
       
 -- | parse NCBITaxCitations from input string
 parseNCBITaxCitations :: String -> Either ParseError [TaxCitation]
@@ -317,7 +331,7 @@ genParserNCBITaxName = do
   tab
   char '|'
   newline
-  return $! TaxName (readInt _taxId) (B.pack _nameTxt) (maybe B.empty B.pack _uniqueName) (B.pack _nameClass)
+  return $! TaxName (readInt _taxId) (T.pack _nameTxt) (maybe T.empty T.pack _uniqueName) (T.pack _nameClass)
 
 genParserNCBISimpleTaxon :: GenParser Char st SimpleTaxon
 genParserNCBISimpleTaxon = do
@@ -328,7 +342,7 @@ genParserNCBISimpleTaxon = do
   _simpleRank <- many1 (noneOf "\t")
   many1 (noneOf "\n")
   char '\n'
-  return $! SimpleTaxon (readInt _simpleTaxId) B.empty (readInt _simpleParentTaxId) (readRank _simpleRank) 
+  return $! SimpleTaxon (readInt _simpleTaxId) T.empty (readInt _simpleParentTaxId) (readRank _simpleRank) 
 
 genParserNCBITaxNode :: GenParser Char st TaxNode
 genParserNCBITaxNode = do
@@ -465,32 +479,48 @@ safeNodePath nodeid1 graphOutput nodeid2
 -- Visualisation functions
 
 -- | Draw graph in dot format. Used in Ids2Tree tool.
-drawTaxonomy :: Gr SimpleTaxon Double -> String
-drawTaxonomy inputGraph = do
+drawTaxonomy :: Gr SimpleTaxon Double -> Bool -> String
+drawTaxonomy inputGraph withRank = do
+  let nodeFormating = if withRank then nodeFormatWithRank else nodeFormatWithoutRank
   let params = GV.nonClusteredParams {GV.isDirected       = True
                        , GV.globalAttributes = [GV.GraphAttrs [GVA.Size (GVA.GSize (20 :: Double) (Just (20 :: Double)) False)]]
                        , GV.isDotCluster     = const True
-                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack (show (simpleRank l) ++ "\n" ++ B.unpack (simpleScientificName l)))]
+                       --, GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack (show (simpleRank l) ++ "\n" ++ T.unpack (simpleScientificName l)))]
+                       , GV.fmtNode = nodeFormating
                        , GV.fmtEdge          = const []
                        }
   let dotFormat = GV.graphToDot params inputGraph
   let dottext = GVP.renderDot $ GVP.toDot dotFormat
-  TL.unpack dottext
+  T.unpack dottext
 
+nodeFormatWithRank :: (t, SimpleTaxon) -> [GVA.Attribute]
+nodeFormatWithRank (_,l) = [GV.textLabel (T.concat [T.pack (show (simpleRank l)), T.pack ("\n") , simpleScientificName l])]
+
+nodeFormatWithoutRank :: (t, SimpleTaxon) -> [GVA.Attribute]
+nodeFormatWithoutRank (_,l) = [GV.textLabel (simpleScientificName l)]
+    
 -- | Draw tree comparison graph in dot format. Used in Ids2TreeCompare tool.
-drawTreeComparison :: (Int,Gr CompareTaxon Double) -> String
-drawTreeComparison (treeNumber,inputGraph) = do
-  let cList = makeColorList treeNumber 
+drawTreeComparison :: (Int,Gr CompareTaxon Double) -> Bool -> String
+drawTreeComparison (treeNumber,inputGraph) withRank = do
+  let cList = makeColorList treeNumber
+  let nodeFormating = if withRank then (compareNodeFormatWithRank cList) else (compareNodeFormatWithoutRank cList)
   let params = GV.nonClusteredParams {GV.isDirected = True
-                      , GV.globalAttributes = []
+                       , GV.globalAttributes = []
                        , GV.isDotCluster = const True
-                       , GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack (show (compareRank l) ++ "\n" ++ B.unpack (compareScientificName l))), GV.style GV.wedged, GVA.Color (selectColors (inTree l) cList)]
+                       --, GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack (show (compareRank l) ++ "\n" ++ B.unpack (compareScientificName l))), GV.style GV.wedged, GVA.Color (selectColors (inTree l) cList)]
+                       , GV.fmtNode = nodeFormating
                        , GV.fmtEdge = const []
                        }
   let dotFormat = GV.graphToDot params (grev inputGraph)
   let dottext = GVP.renderDot $ GVP.toDot dotFormat
-  TL.unpack dottext
+  T.unpack dottext
 
+compareNodeFormatWithRank :: [GVA.Color] -> (t, CompareTaxon) -> [GVA.Attribute]
+compareNodeFormatWithRank cList (_,l) = [GV.textLabel (T.concat [T.pack (show (compareRank l) ++ "\n"),compareScientificName l]), GV.style GV.wedged, GVA.Color (selectColors (inTree l) cList)]
+
+compareNodeFormatWithoutRank :: [GVA.Color] -> (t, CompareTaxon) -> [GVA.Attribute]
+compareNodeFormatWithoutRank cList (_,l) = [GV.textLabel (compareScientificName l), GV.style GV.wedged, GVA.Color (selectColors (inTree l) cList)]
+   
 -- | Colors from color list are selected according to in which of the compared trees the node is contained.
 selectColors :: [Int] -> [GVA.Color] -> GVAC.ColorList
 selectColors inTrees currentColorList = GVAC.toColorList (map (\i -> currentColorList !! i) inTrees)
@@ -502,18 +532,18 @@ makeColorList treeNumber = cList
         neededColors = treeNumber - 1
 
 -- | Write tree representation either as dot or json to provided file path
-writeTree :: String -> String -> Gr SimpleTaxon Double -> IO ()
-writeTree requestedFormat outputDirectoryPath inputGraph = do
+writeTree :: String -> String -> Bool -> Gr SimpleTaxon Double -> IO ()
+writeTree requestedFormat outputDirectoryPath withRank inputGraph = do
   case requestedFormat of
-    "dot" -> writeDotTree outputDirectoryPath inputGraph
+    "dot" -> writeDotTree outputDirectoryPath withRank inputGraph
     "json"-> writeJsonTree outputDirectoryPath inputGraph
-    _ -> writeDotTree outputDirectoryPath inputGraph
+    _ -> writeDotTree outputDirectoryPath withRank inputGraph 
 
 -- | Write tree representation as dot to provided file path.
 -- Graphviz tools like dot can be applied to the written .dot file to generate e.g. svg-format images.
-writeDotTree :: String -> Gr SimpleTaxon Double -> IO ()
-writeDotTree outputDirectoryPath inputGraph = do
-  let diagram = drawTaxonomy (grev inputGraph)
+writeDotTree :: String -> Bool -> Gr SimpleTaxon Double -> IO ()
+writeDotTree outputDirectoryPath withRank inputGraph = do
+  let diagram = drawTaxonomy (grev inputGraph) withRank
   writeFile (outputDirectoryPath ++ "taxonomy.dot") diagram
 
 -- | Write tree representation as json to provided file path.

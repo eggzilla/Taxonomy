@@ -5,12 +5,13 @@
 
 module Bio.TaxonomyData where
 import Prelude
-import qualified Data.ByteString as B
+--import qualified Data.ByteString as B
 import qualified Data.Aeson as A
 import qualified Data.Vector as V
 import Data.Graph.Inductive
 import qualified Data.Text as T
-import qualified Data.Text.Encoding
+import qualified Data.Text.Lazy as TL   
+--import qualified Data.Text.Encoding
 
 -- | SimpleTaxon only contains the most relevant fields of a taxonomy entry.
 --   For all annotaded fields use the Taxon datatype and its associated functions
@@ -18,7 +19,7 @@ data SimpleTaxon = SimpleTaxon
   {
    -- node id in GenBank
    simpleTaxId :: Int,
-   simpleScientificName :: B.ByteString,
+   simpleScientificName :: TL.Text,
    -- parent node id in GenBank taxonomy database               
    simpleParentTaxId :: Int,
    -- rank of this node (superkingdom, kingdom, ...) 
@@ -29,7 +30,7 @@ data SimpleTaxon = SimpleTaxon
 -- | Datastructure for tree comparisons
 data CompareTaxon = CompareTaxon
   {
-   compareScientificName :: B.ByteString,
+   compareScientificName :: TL.Text,
    compareRank :: Rank,
    -- number indicating in which trees, 
    inTree :: [Int]
@@ -157,11 +158,11 @@ data TaxName = TaxName
    -- the id of node associated with this name
    nameTaxId :: Int,
    -- name itself
-   nameTxt :: B.ByteString,
+   nameTxt :: TL.Text,
    -- the unique variant of this name if name not unique
-   uniqueName :: B.ByteString,
+   uniqueName :: TL.Text,
    -- (synonym, common name, ...)
-   nameClass :: B.ByteString
+   nameClass :: TL.Text
   }
   deriving (Show, Read, Eq)
 
@@ -282,7 +283,7 @@ simpleTaxonJSONValue inputGraph node = jsonValue
   where jsonValue = A.object [currentScientificName,T.pack "children" A..= children]
         childNodes = suc inputGraph node
         currentLabel = lab inputGraph node
-        currentScientificName = T.pack "name" A..= maybe (T.pack "notFound") (Data.Text.Encoding.decodeUtf8 . simpleScientificName) currentLabel
+        currentScientificName = T.pack "name" A..= maybe (T.pack "notFound") (TL.toStrict  . simpleScientificName) currentLabel
         children = A.Array (V.fromList (map (simpleTaxonJSONValue inputGraph) childNodes))
         --jsonValue = A.object [currentScientificName,currentId,currentRank,(T.pack "children") A..= children]
         --currentId = (T.pack "id") A..= (maybe (T.pack "notFound") (\a -> T.pack (show (simpleTaxId a))) currentLabel)
