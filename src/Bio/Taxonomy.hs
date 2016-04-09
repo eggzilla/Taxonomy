@@ -479,8 +479,8 @@ safeNodePath nodeid1 graphOutput nodeid2
 -- Visualisation functions
 
 -- | Draw graph in dot format. Used in Ids2Tree tool.
-drawTaxonomy :: Gr SimpleTaxon Double -> Bool -> String
-drawTaxonomy inputGraph withRank = do
+drawTaxonomy :: Bool -> Gr SimpleTaxon Double -> String
+drawTaxonomy withRank inputGraph = do
   let nodeFormating = if withRank then nodeFormatWithRank else nodeFormatWithoutRank
   let params = GV.nonClusteredParams {GV.isDirected       = True
                        , GV.globalAttributes = [GV.GraphAttrs [GVA.Size (GVA.GSize (20 :: Double) (Just (20 :: Double)) False)]]
@@ -543,7 +543,7 @@ writeTree requestedFormat outputDirectoryPath withRank inputGraph = do
 -- Graphviz tools like dot can be applied to the written .dot file to generate e.g. svg-format images.
 writeDotTree :: String -> Bool -> Gr SimpleTaxon Double -> IO ()
 writeDotTree outputDirectoryPath withRank inputGraph = do
-  let diagram = drawTaxonomy (grev inputGraph) withRank
+  let diagram = drawTaxonomy withRank (grev inputGraph)
   writeFile (outputDirectoryPath ++ "taxonomy.dot") diagram
 
 -- | Write tree representation as json to provided file path.
