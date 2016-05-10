@@ -79,12 +79,11 @@ import qualified Data.Text.Lazy as T
 readNamedTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
 readNamedTaxonomy directoryPath = do
   nodeNames <- readNCBITaxNames (directoryPath ++ "names.dmp")
-  --let scientificNameBS = T.pack "scientific name"
   if E.isLeft nodeNames
      then return (Left (E.fromLeft nodeNames))
      else do
-       let nodeNamesVector = V.fromList (E.fromRight nodeNames)
-       let filteredNodeNames = V.filter isScientificName nodeNamesVector
+       let rightNodeNames = V.fromList (E.fromRight nodeNames)
+       let filteredNodeNames = V.filter isScientificName rightNodeNames
        parseFromFileEncISO88591 (genParserNamedTaxonomyGraph filteredNodeNames) (directoryPath ++ "nodes.dmp")
 
 isScientificName :: TaxName -> Bool
@@ -116,12 +115,12 @@ notLoopEdge (a,b,_) = a /= b
          
 genParserNamedTaxonomyGraph :: V.Vector TaxName -> GenParser Char st (Gr SimpleTaxon Double)
 genParserNamedTaxonomyGraph filteredNodeNames = do
-  nodesEdges <- many1 (try genParserGraphNodeEdge)
+  nodesEdges <- (many1 (try genParserGraphNodeEdge))
   optional eof
-  let (nodesList,edgesList) = unzip nodesEdges
-  let taxedges = filter notLoopEdge edgesList
-  let taxnamednodes = map (setNodeScientificName filteredNodeNames) nodesList
-  return $! mkGraph taxnamednodes taxedges
+  let (nodesList,edgesList) = V.unzip (V.fromList nodesEdges)
+  let taxedges = V.filter notLoopEdge edgesList
+  let taxnamednodes = V.map (setNodeScientificName filteredNodeNames) nodesList
+  return $! mkGraph (V.toList taxnamednodes) (V.toList taxedges)
 
 setNodeScientificName :: V.Vector TaxName -> (t, SimpleTaxon) -> (t, SimpleTaxon)
 setNodeScientificName inputTaxNames (inputNode,inputTaxon) = outputNode
