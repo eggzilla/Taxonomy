@@ -40,6 +40,7 @@ module Bio.Taxonomy (  -- * Datatypes
                        -- * Processing
                        compareSubTrees,    
                        extractTaxonomySubTreebyLevel,
+                       extractTaxonomySubTreebyLevelNew,                             
                        extractTaxonomySubTreebyRank,
                        safeNodePath,
                        getParentbyRank,
@@ -412,6 +413,23 @@ extractTaxonomySubTreebyLevel inputNodes graph levelNumber = taxonomySubTree
         filteredledges = nub (concatMap (out graph . fst) filteredLNodes)
         taxonomySubTree = mkGraph filteredLNodes filteredledges :: Gr SimpleTaxon Double      
 
+-- | Extract a subtree corresponding to input node paths to root. Only nodes in level number distance to root are included. Used in Ids2Tree tool.
+extractTaxonomySubTreebyLevelNew :: [Node] -> Gr SimpleTaxon Double -> Maybe Int -> Gr SimpleTaxon Double
+extractTaxonomySubTreebyLevelNew inputNodes graph levelNumber = taxonomySubTree
+  where inputNodeVector = V.fromList inputNodes
+        paths = V.concatMap (getVectorPath (1 :: Node) graph) inputNodeVector
+        contexts = V.map (context graph) paths
+        vlnodes = V.map labNode' contexts
+        ledges = concatMap (out graph . fst) lnodes
+        lnodes = V.toList vlnodes
+        --ledges = V.toList vledges
+        unfilteredTaxonomySubTree = mkGraph lnodes ledges :: Gr SimpleTaxon Double
+        filteredLNodes = filterNodesByLevel levelNumber lnodes unfilteredTaxonomySubTree
+        --filteredLNodesVector = V.fromList filteredLNodes
+        filteredledges = concatMap (out graph . fst) filteredLNodes
+        --filteredledges = V.toList filteredledgesVector
+        taxonomySubTree = mkGraph filteredLNodes filteredledges :: Gr SimpleTaxon Double      
+                          
 -- | Extract a subtree corresponding to input node paths to root. If a Rank is provided, all node that are less or equal are omitted
 extractTaxonomySubTreebyRank :: [Node] -> Gr SimpleTaxon Double -> Maybe Rank -> Gr SimpleTaxon Double
 extractTaxonomySubTreebyRank inputNodes graph highestRank = taxonomySubTree
@@ -422,9 +440,12 @@ extractTaxonomySubTreebyRank inputNodes graph highestRank = taxonomySubTree
         filteredledges = nub (concatMap (out graph . fst) filteredLNodes)
         taxonomySubTree = mkGraph filteredLNodes filteredledges :: Gr SimpleTaxon Double
 
+getVectorPath :: Node -> Gr SimpleTaxon Double -> Node -> V.Vector Node
+getVectorPath root graph node =  V.fromList (sp node root graph)
+
 getPath :: Node -> Gr SimpleTaxon Double -> Node -> Path
 getPath root graph node =  sp node root graph
-
+                           
 -- | Extract parent node with specified Rank
 getParentbyRank :: Node -> Gr SimpleTaxon Double -> Maybe Rank -> Maybe (Node, SimpleTaxon)
 getParentbyRank inputNode graph requestedRank = filteredLNode
