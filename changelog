@@ -1,0 +1,4 @@
+-*-change-log-*-
+1.0.2 Florian Eggenhofer <egg@informatik.uni-freiburg.de> 23. October 2016
+	* Changed datastructures for cutting the tree from list to vectors
+	* Improved travis file
