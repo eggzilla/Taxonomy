@@ -8,7 +8,9 @@ import Prelude
 --import qualified Data.ByteString as B
 import qualified Data.Aeson as A
 import qualified Data.Vector as V
-import Data.Graph.Inductive
+--import Data.Graph.Inductive
+import Data.Graph.Inductive.Graph
+import Data.Graph.Inductive.Tree
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL   
 --import qualified Data.Text.Encoding
