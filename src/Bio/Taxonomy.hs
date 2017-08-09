@@ -69,7 +69,7 @@ import qualified Data.GraphViz.Attributes.Complete as GVA
 --import qualified Data.Text.Lazy as TL
 --import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
-import qualified Data.Aeson.Encode as AE
+import qualified Data.Aeson as AE
 import qualified Data.Text.Lazy as T
 --------------------------------------------------------
 
