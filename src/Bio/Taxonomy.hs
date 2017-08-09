@@ -61,13 +61,15 @@ import Data.List
 import qualified Data.Vector as V
 import Data.Maybe    
 import qualified Data.Either.Unwrap as E
-import Data.Graph.Inductive
+import Data.Graph.Inductive.Graph
+import Data.Graph.Inductive.Query.SP (sp)
+import Data.Graph.Inductive.Query.BFS (level)
+import Data.Graph.Inductive.Tree
+import Data.Graph.Inductive.Basic
 import qualified Data.GraphViz as GV
 import qualified Data.GraphViz.Printing as GVP
 import qualified Data.GraphViz.Attributes.Colors as GVAC
 import qualified Data.GraphViz.Attributes.Complete as GVA
---import qualified Data.Text.Lazy as TL
---import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.Aeson as AE
 import qualified Data.Text.Lazy as T
@@ -441,15 +443,15 @@ extractTaxonomySubTreebyRank inputNodes graph highestRank = taxonomySubTree
         taxonomySubTree = mkGraph filteredLNodes filteredledges :: Gr SimpleTaxon Double
 
 getVectorPath :: Node -> Gr SimpleTaxon Double -> Node -> V.Vector Node
-getVectorPath root graph node =  V.fromList (sp node root graph)
+getVectorPath root graph node =  maybe V.empty V.fromList (sp node root graph)
 
 getPath :: Node -> Gr SimpleTaxon Double -> Node -> Path
-getPath root graph node =  sp node root graph
+getPath root graph node =  maybe [] id (sp node root graph)
                            
 -- | Extract parent node with specified Rank
 getParentbyRank :: Node -> Gr SimpleTaxon Double -> Maybe Rank -> Maybe (Node, SimpleTaxon)
 getParentbyRank inputNode graph requestedRank = filteredLNode
-  where path = sp (inputNode :: Node) (1 :: Node) graph
+  where path =  maybe [] id (sp (inputNode :: Node) (1 :: Node) graph)
         nodeContext = map (context graph) path
         lnode = map labNode' nodeContext
         filteredLNode = findNodeByRank requestedRank lnode
@@ -490,9 +492,9 @@ filterNodesByRank highestRank inputNodes
           noRankNodes = filter (\(_,t) -> simpleRank t == Norank) inputNodes
 
 -- | Returns path between 2 maybe nodes. Used in TreeDistance tool.
-safeNodePath :: Maybe Node -> Gr SimpleTaxon Double -> Maybe Node -> Either String [Node]
+safeNodePath :: Maybe Node -> Gr SimpleTaxon Double -> Maybe Node -> Either String Path
 safeNodePath nodeid1 graphOutput nodeid2
-  | isJust nodeid1 && isJust nodeid2 = Right (sp (fromJust nodeid1) (fromJust nodeid2) (undir graphOutput))
+  | isJust nodeid1 && isJust nodeid2 = Right  (maybe [] id (sp (fromJust nodeid1) (fromJust nodeid2) (undir graphOutput)))
   | otherwise = Left "Both taxonomy ids must be provided for distance computation"
 
 ---------------------------------------
