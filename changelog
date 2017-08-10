@@ -1,4 +1,7 @@
 -*-change-log-*-
+1.0.3 Florian Eggenhofer <egg@informatik.uni-freiburg.de> 10. August 2017
+	* Compatibility with newest versions of fgl
+	* Improved travis file
 1.0.2 Florian Eggenhofer <egg@informatik.uni-freiburg.de> 23. October 2016
 	* Changed datastructures for cutting the tree from list to vectors
 	* Improved travis file
