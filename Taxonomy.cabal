@@ -42,7 +42,7 @@ library
   exposed-modules:   Bio.TaxonomyData, Bio.Taxonomy 
  
   -- compiler-options:
-  ghc-options:         -Wall -O2 -fno-warn-unused-do-bind
+  ghc-options:         -Wall -fno-warn-unused-do-bind
 
   -- Other library packages from which modules are imported.
   build-depends:       base >=4.5 && <5, parsec, either-unwrap, fgl>=5.5.4.0, text, graphviz>=2999.12.0.4, bytestring, aeson, vector
