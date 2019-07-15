@@ -5,7 +5,7 @@
 
 module Bio.TaxonomyData where
 import Prelude
---import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as B
 import qualified Data.Aeson as A
 import qualified Data.Vector as V
 --import Data.Graph.Inductive
@@ -88,22 +88,22 @@ data TaxCitation = TaxCitation
    -- the unique id of citation
    citId :: Int,
    -- citation key
-   citKey :: Maybe String,
+   citKey :: B.ByteString,
    -- unique id in PubMed database (0 if not in PubMed)
    pubmedId :: Maybe Int,
    -- unique id in MedLine database (0 if not in MedLine)
    medlineId :: Maybe Int,
    -- URL associated with citation
-   url :: Maybe String,
+   url :: B.ByteString,
    -- any text (usually article name and authors)
    -- The following characters are escaped in this text by a backslash:
    -- newline (appear as "\n"),
    -- tab character ("\t"),
    -- double quotes ('\"'),
    -- backslash character ("\\").
-   text :: Maybe String,
+   text :: B.Bytestring,
    -- list of node ids separated by a single space
-   taxIdList :: Maybe [Int]
+   taxIdList :: [Int]
   }
   deriving (Show, Read, Eq)
 
@@ -121,10 +121,10 @@ data TaxDivision = TaxDivision
    -- taxonomy database division id
    divisionId :: Int,
    -- GenBank division code (three characters)
-   divisionCDE :: String,
+   divisionCDE :: B.ByteString,
    -- e.g. BCT, PLN, VRT, MAM, PRI...
-   divisonName :: String,
-   divisionComments :: Maybe String
+   divisonName :: B.ByteString,
+   divisionComments :: B.ByteString
   }
   deriving (Show, Read, Eq)
 
@@ -134,13 +134,13 @@ data TaxGenCode = TaxGenCode
    -- GenBank genetic code id
    geneticCodeId :: Int,
    -- genetic code name abbreviation
-   abbreviation :: Maybe String,
+   abbreviation :: B.ByteString,
    -- genetic code name
-   geneCodeName :: String,
+   geneCodeName :: B.ByteString,
    -- translation table for this genetic code
-   cde :: String,
+   cde :: B.ByteString,
    -- start codons for this genetic code
-   starts :: String
+   starts :: B.ByteString
   }
   deriving (Show, Read, Eq)
 
@@ -160,11 +160,11 @@ data TaxName = TaxName
    -- the id of node associated with this name
    nameTaxId :: Int,
    -- name itself
-   nameTxt :: TL.Text,
+   nameTxt :: B.ByteString,
    -- the unique variant of this name if name not unique
-   uniqueName :: TL.Text,
+   uniqueName :: B.ByteString,
    -- (synonym, common name, ...)
-   nameClass :: TL.Text
+   nameClass :: B.ByteString
   }
   deriving (Show, Read, Eq)
 
@@ -230,17 +230,17 @@ data TaxNode = TaxNode
    -- rank of this node (superkingdom, kingdom, ...) 
    rank :: Rank,
    -- locus-name prefix; not unique
-   emblCode :: Maybe String,
+   emblCode :: B.ByteString,
    -- see division.dmp file
-   nodeDivisionId :: String,
+   nodeDivisionId :: B.ByteString,
    -- 1 if node inherits division from parent
    inheritedDivFlag :: Bool,
    -- see gencode.dmp file
-   nodeGeneticCodeId :: String,
+   nodeGeneticCodeId :: B.ByteString,
    -- 1 if node inherits genetic code from parent
    inheritedGCFlag :: Bool,
    -- see gencode.dmp file 
-   mitochondrialGeneticCodeId :: String,
+   mitochondrialGeneticCodeId :: B.ByteString,
    -- 1 if node inherits mitochondrial gencode from parent
    inheritedMGCFlag :: Bool,
    -- 1 if name is suppressed in GenBank entry lineage
@@ -248,14 +248,14 @@ data TaxNode = TaxNode
    -- 1 if this subtree has no sequence data yet
    hiddenSubtreeRootFlag :: Bool,
    -- free-text comments and citations
-   nodeComments :: Maybe String
+   nodeComments :: B.ByteString
   }
   deriving (Show, Read, Eq)
 
 -- | Simple Gene2Accession table 
 data SimpleGene2Accession = SimpleGene2Accession
   { simpleTaxIdEntry :: Int,
-    simpleGenomicNucleotideAccessionVersion :: String
+    simpleGenomicNucleotideAccessionVersion :: B.ByteString
   } deriving (Show, Eq, Read) 
 
 -- | Datastructure for Gene2Accession table
@@ -263,18 +263,18 @@ data Gene2Accession = Gene2Accession
   { taxIdEntry :: Int,
     geneID :: Int,
     status :: String,
-    rnaNucleotideAccessionVersion :: String,
-    rnaNucleotideGi :: String,
-    proteinAccessionVersion :: String,
-    proteinGi :: String,
-    genomicNucleotideAccessionVersion :: String,
-    genomicNucleotideGi :: String,
-    startPositionOnTheGenomicAccession :: String,
-    endPositionOnTheGenomicAccession ::  String,
-    orientation :: String,
-    assembly :: String,
-    maturePeptideAccessionVersion :: String,
-    maturePeptideGi :: String
+    rnaNucleotideAccessionVersion :: B.ByteString,
+    rnaNucleotideGi :: B.ByteString,
+    proteinAccessionVersion :: B.ByteString,
+    proteinGi :: B.ByteString,
+    genomicNucleotideAccessionVersion :: B.ByteString,
+    genomicNucleotideGi :: B.ByteString,
+    startPositionOnTheGenomicAccession :: B.ByteString,
+    endPositionOnTheGenomicAccession ::  B.ByteString,
+    orientation :: B.ByteString,
+    assembly :: B.ByteString,
+    maturePeptideAccessionVersion :: B.ByteString,
+    maturePeptideGi :: B.ByteString
   } deriving (Show, Eq, Read)  
 
 instance A.ToJSON (Gr SimpleTaxon Double) where
