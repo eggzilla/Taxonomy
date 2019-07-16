@@ -42,29 +42,29 @@ data CompareTaxon = CompareTaxon
 -- | Data structure for Entrez taxonomy fetch result
 data Taxon = Taxon
   {  taxonTaxId :: Int
-  ,  taxonScientificName :: String
+  ,  taxonScientificName :: B.ByteString
   ,  taxonParentTaxId :: Int
   ,  taxonRank :: Rank
-  ,  division :: String
+  ,  division :: B.ByteString
   ,  geneticCode :: TaxGenCode
   ,  mitoGeneticCode :: TaxGenCode
-  ,  lineage :: String
+  ,  lineage :: B.ByteString
   ,  lineageEx :: [LineageTaxon]
-  ,  createDate :: String
-  ,  updateDate :: String
-  ,  pubDate :: String
+  ,  createDate :: B.ByteString
+  ,  updateDate :: B.ByteString
+  ,  pubDate :: B.ByteString
   } deriving (Show, Eq)
 
 
 data TaxonName = TaxonName
-  {  classCDE :: String
-  ,  dispName :: String
+  {  classCDE :: B.ByteString
+  ,  dispName :: B.ByteString
   } deriving (Show, Eq)
 
 -- | Lineage Taxons denote all parent Taxonomy nodes of a node retrieved by Entrez fetch
 data LineageTaxon = LineageTaxon
   {  lineageTaxId :: Int
-  ,  lineageScienticName :: String
+  ,  lineageScienticName :: B.ByteString
   ,  lineageRank :: Rank}
   deriving (Show, Eq)
            
@@ -101,7 +101,7 @@ data TaxCitation = TaxCitation
    -- tab character ("\t"),
    -- double quotes ('\"'),
    -- backslash character ("\\").
-   text :: B.Bytestring,
+   text :: B.ByteString,
    -- list of node ids separated by a single space
    taxIdList :: [Int]
   }
@@ -160,7 +160,7 @@ data TaxName = TaxName
    -- the id of node associated with this name
    nameTaxId :: Int,
    -- name itself
-   nameTxt :: B.ByteString,
+   nameTxt :: TL.Text,
    -- the unique variant of this name if name not unique
    uniqueName :: B.ByteString,
    -- (synonym, common name, ...)
@@ -232,15 +232,15 @@ data TaxNode = TaxNode
    -- locus-name prefix; not unique
    emblCode :: B.ByteString,
    -- see division.dmp file
-   nodeDivisionId :: B.ByteString,
+   nodeDivisionId :: Int,
    -- 1 if node inherits division from parent
    inheritedDivFlag :: Bool,
    -- see gencode.dmp file
-   nodeGeneticCodeId :: B.ByteString,
+   nodeGeneticCodeId :: Int,
    -- 1 if node inherits genetic code from parent
    inheritedGCFlag :: Bool,
    -- see gencode.dmp file 
-   mitochondrialGeneticCodeId :: B.ByteString,
+   mitochondrialGeneticCodeId :: Int,
    -- 1 if node inherits mitochondrial gencode from parent
    inheritedMGCFlag :: Bool,
    -- 1 if name is suppressed in GenBank entry lineage
@@ -262,7 +262,7 @@ data SimpleGene2Accession = SimpleGene2Accession
 data Gene2Accession = Gene2Accession
   { taxIdEntry :: Int,
     geneID :: Int,
-    status :: String,
+    status :: B.ByteString,
     rnaNucleotideAccessionVersion :: B.ByteString,
     rnaNucleotideGi :: B.ByteString,
     proteinAccessionVersion :: B.ByteString,

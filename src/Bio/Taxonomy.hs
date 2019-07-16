@@ -71,6 +71,7 @@ import qualified Data.GraphViz.Printing as GVP
 import qualified Data.GraphViz.Attributes.Colors as GVAC
 import qualified Data.GraphViz.Attributes.Complete as GVA
 import qualified Data.ByteString.Lazy.Char8 as L
+import qualified Data.ByteString.Char8 as B
 import qualified Data.Aeson as AE
 import qualified Data.Text.Lazy as T
 --------------------------------------------------------
@@ -91,7 +92,7 @@ readNamedTaxonomy directoryPath = do
 
 isScientificName :: TaxName -> Bool
 isScientificName name = nameClass name == scientificNameT
-  where scientificNameT = T.pack "scientific name"
+  where scientificNameT = B.pack "scientific name"
 
 -- | NCBI taxonomy dump nodes and names in the input directory path are parsed and a SimpleTaxon tree is generated. 
 readTaxonomy :: String -> IO (Either ParseError (Gr SimpleTaxon Double))  
@@ -263,7 +264,7 @@ genParserNCBITaxCitation :: GenParser Char st TaxCitation
 genParserNCBITaxCitation = do
   _citId <- many1 digit
   string "\t|\t"
-  _citKey <- optionMaybe (many1 (noneOf "\t"))
+  _citKey <- many (noneOf "\t")
   string "\t|\t"
   _pubmedId <- optionMaybe (many1 digit)
   string "\t|\t"
@@ -273,11 +274,11 @@ genParserNCBITaxCitation = do
   _url <- genParserTaxURL
   char '|'
   tab
-  _text <- optionMaybe (many1 (noneOf "\t"))
+  _text <- (many (noneOf "\t"))
   string "\t|\t"
-  _taxIdList <- optionMaybe (many1 genParserTaxIdList)
+  _taxIdList <- (many genParserTaxIdList)
   string "\t|\n"
-  return $ TaxCitation (readInt _citId) _citKey (liftM readInt _pubmedId) (liftM readInt _medlineId) _url _text _taxIdList
+  return $ TaxCitation (readInt _citId) (B.pack _citKey) (liftM readInt _pubmedId) (liftM readInt _medlineId) _url (B.pack _text) _taxIdList
 
 genParserNCBITaxDelNode :: GenParser Char st TaxDelNode
 genParserNCBITaxDelNode = do
@@ -295,15 +296,15 @@ genParserNCBITaxDivision = do
   string "\t|\t"
   _divisionName <- many1 (noneOf "\t")
   string "\t|\t"
-  _comments <- optionMaybe (many1 (noneOf "\t"))
+  _comments <- many1 (noneOf "\t")
   string "\t|\n"
-  return $ TaxDivision (readInt _divisionId) _divisionCDE _divisionName _comments 
+  return $ TaxDivision (readInt _divisionId) (B.pack _divisionCDE) (B.pack _divisionName) (B.pack _comments)
 
 genParserNCBITaxGenCode :: GenParser Char st TaxGenCode
 genParserNCBITaxGenCode = do
   _geneticCodeId <- many1 digit 
   string "\t|\t"
-  _abbreviation <- optionMaybe (many1 (noneOf "\t"))
+  _abbreviation <- (many1 (noneOf "\t"))
   string "\t|\t"
   _genCodeName <- many1 (noneOf "\t")
   string "\t|\t"
@@ -311,7 +312,7 @@ genParserNCBITaxGenCode = do
   string "\t|\t"
   _starts <- many1 (noneOf "\t")
   string "\t|\n"
-  return $ TaxGenCode (readInt _geneticCodeId) _abbreviation _genCodeName _cde _starts
+  return $ TaxGenCode (readInt _geneticCodeId) (B.pack _abbreviation) (B.pack _genCodeName) (B.pack _cde) (B.pack _starts)
 
 genParserNCBITaxMergedNode :: GenParser Char st TaxMergedNode
 genParserNCBITaxMergedNode = do
@@ -327,13 +328,13 @@ genParserNCBITaxName = do
   string "\t|\t"
   _nameTxt <- many1 (noneOf "\t\n")
   string "\t|\t"
-  _uniqueName <- optionMaybe (many1 (noneOf "\t\n"))
+  _uniqueName <- many (noneOf "\t\n")
   string "\t|\t"
   _nameClass <- many1 (noneOf "\t\n")
   tab
   char '|'
   newline
-  return $! TaxName (readInt _taxId) (T.pack _nameTxt) (maybe T.empty T.pack _uniqueName) (T.pack _nameClass)
+  return $! TaxName (readInt _taxId) (T.pack _nameTxt) (B.pack _uniqueName) (B.pack _nameClass)
 
 genParserNCBISimpleTaxon :: GenParser Char st SimpleTaxon
 genParserNCBISimpleTaxon = do
@@ -354,7 +355,7 @@ genParserNCBITaxNode = do
   string "\t|\t"
   _rank <- many1 (noneOf "\t")
   string "\t|\t"
-  _emblCode <- optionMaybe (many1 (noneOf "\t"))
+  _emblCode <- (many (noneOf "\t"))
   string "\t|\t"
   _divisionId <- many1 digit
   string "\t|\t"
@@ -372,11 +373,11 @@ genParserNCBITaxNode = do
   string "\t|\t"
   _hiddenSubtreeRootFlag <- many1 digit 
   string "\t|\t"
-  _comments <- optionMaybe (many1 (noneOf "\t"))
+  _comments <- many (noneOf "\t")
   tab
   char '|'
   char '\n'
-  return $ TaxNode (readInt _taxId) (readInt _parentTaxId) (readRank _rank) _emblCode _divisionId (readBool _inheritedDivFlag) _geneticCodeId (readBool _inheritedGCFlag) _mitochondrialGeneticCodeId (readBool _inheritedMGCFlag) (readBool _genBankHiddenFlag) (readBool _hiddenSubtreeRootFlag) _comments
+  return $ TaxNode (readInt _taxId) (readInt _parentTaxId) (readRank _rank) (B.pack _emblCode) (read _divisionId :: Int) (readBool _inheritedDivFlag) (read _geneticCodeId ::Int) (readBool _inheritedGCFlag) (read _mitochondrialGeneticCodeId ::Int) (readBool _inheritedMGCFlag) (readBool _genBankHiddenFlag) (readBool _hiddenSubtreeRootFlag) (B.pack _comments)
 
 ---------------------------------------
 -- Processing functions
@@ -595,13 +596,14 @@ genParserTaxIdList = do
   optional (char ' ')
   return (readInt _taxId)
 
-genParserTaxURL :: GenParser Char st (Maybe String)
+genParserTaxURL :: GenParser Char st B.ByteString
 genParserTaxURL = do
   tab 
-  url1 <- optionMaybe (many1 (noneOf "\t"))
+  url1 <- many (noneOf "\t")
   tab
-  url2 <- optionMaybe (many1 (noneOf "|"))
-  return (concatenateURLParts url1 url2)
+  url2 <- many (noneOf "|")
+  return (B.pack (url1 ++ url2))
+  --return (concatenateURLParts url1 url2)
 
 concatenateURLParts :: Maybe String -> Maybe String -> Maybe String
 concatenateURLParts url1 url2 
