@@ -86,9 +86,10 @@ readNamedTaxonomy directoryPath = do
   if E.isLeft nodeNames
      then return (Left (E.fromLeft nodeNames))
      else do
-       let rightNodeNames = V.fromList (E.fromRight nodeNames)
-       let filteredNodeNames = V.filter isScientificName rightNodeNames
-       parseFromFileEncISO88591 (genParserNamedTaxonomyGraph filteredNodeNames) (directoryPath ++ "nodes.dmp")
+       let rightNodeNames = E.fromRight nodeNames
+       let filteredNodeNames = filter isScientificName rightNodeNames
+       let namedTaxonomyGraph = genParserNamedTaxonomyGraph filteredNodeNames
+       parseFromFileEncISO88591 namedTaxonomyGraph (directoryPath ++ "nodes.dmp")
 
 isScientificName :: TaxName -> Bool
 isScientificName name = nameClass name == scientificNameT
@@ -111,24 +112,38 @@ genParserTaxonomyGraph = do
   let taxedges = filter notLoopEdge  edgesList
   --let taxnodes = concat nodesList
   --return (mkGraph taxnodes taxedges)
-  return $! mkGraph nodesList taxedges
+  let currentGraph = mkGraph nodesList taxedges
+  return currentGraph
 
          
 notLoopEdge :: (Int,Int,a) -> Bool
 notLoopEdge (a,b,_) = a /= b
-         
-genParserNamedTaxonomyGraph :: V.Vector TaxName -> GenParser Char st (Gr SimpleTaxon Double)
+
+genParserNodeEdges :: [TaxName] -> GenParser Char st [(Int,SimpleTaxon),(Int,Int,Double)]
+genParserNodeEdges = do
+  nodesEdges <- (many1 (try genParserGraphNodeEdge))
+  optional eof
+  return (nodesList,edgesList)
+
+  
+  --let taxedges = filter notLoopEdge edgesList
+  --let taxnamednodes = map (setNodeScientificName filteredNodeNames) nodesList
+  --let currentGraph = mkGraph taxnamednodes taxedges
+  --return currentGraph
+                      
+genParserNamedTaxonomyGraph :: [TaxName] -> GenParser Char st (Gr SimpleTaxon Double)
 genParserNamedTaxonomyGraph filteredNodeNames = do
   nodesEdges <- (many1 (try genParserGraphNodeEdge))
   optional eof
-  let (nodesList,edgesList) = V.unzip (V.fromList nodesEdges)
-  let taxedges = V.filter notLoopEdge edgesList
-  let taxnamednodes = V.map (setNodeScientificName filteredNodeNames) nodesList
-  return $! mkGraph (V.toList taxnamednodes) (V.toList taxedges)
+  let (nodesList,edgesList) = unzip nodesEdges
+  let taxedges = filter notLoopEdge edgesList
+  let taxnamednodes = map (setNodeScientificName filteredNodeNames) nodesList
+  let currentGraph = mkGraph taxnamednodes taxedges
+  return currentGraph
 
-setNodeScientificName :: V.Vector TaxName -> (t, SimpleTaxon) -> (t, SimpleTaxon)
+setNodeScientificName :: [TaxName] -> (t, SimpleTaxon) -> (t, SimpleTaxon)
 setNodeScientificName inputTaxNames (inputNode,inputTaxon) = outputNode
-  where maybeRetrievedName = V.find (isTaxNameIdSimpleTaxid inputTaxon) inputTaxNames
+  where maybeRetrievedName = find (isTaxNameIdSimpleTaxid inputTaxon) inputTaxNames
         retrievedName = maybe (T.pack "no name") nameTxt maybeRetrievedName
         outputNode = (inputNode,inputTaxon{simpleScientificName = retrievedName})
 
