@@ -4,7 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
-module Bio.TaxonomyData where
+module Biobase.Taxonomy.Types where
 import Prelude
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Aeson as A
@@ -67,7 +67,7 @@ data Lineage = Lineage
   {  lineageStartTaxId :: Int
   ,  lineageStartScienticName :: B.ByteString
   ,  lineageStartRank :: Rank
-  ,  lineageEx :: [LineageTaxon]
+  ,  lineageTaxons :: [LineageTaxon]
   }
   deriving (Show, Eq)
 

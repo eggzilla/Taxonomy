@@ -12,9 +12,9 @@
 -- * Visualize result
 --
 --     tput "/path/to/dotdirectory" subtree
-module Bio.Taxonomy (  -- * Datatypes
+module Biobase.Taxonomy.Import (  -- * Datatypes
                        -- Datatypes used to represent taxonomy data
-                       module Bio.TaxonomyData,
+                       module Biobase.Taxonomy.Types,
                        -- * Parsing
                        -- Functions prefixed with "read" read from filepaths, functions with parse from Haskell Strings.
                        readTaxonomy,
@@ -36,43 +36,20 @@ module Bio.Taxonomy (  -- * Datatypes
                        readNCBITaxNodes,
                        parseNCBISimpleTaxons,
                        readNCBISimpleTaxons,
-                       readNCBITaxonomyDatabase,
-                       -- * Processing
-                       compareSubTrees,
-                       extractTaxonomySubTreebyLevel,
-                       extractTaxonomySubTreebyLevelNew,
-                       extractTaxonomySubTreebyRank,
-                       safeNodePath,
-                       getParentbyRank,
-                       -- * Visualization
-                       drawTaxonomyComparison,
-                       drawTaxonomy,
-                       writeTree,
-                       writeDotTree,
-                       writeJsonTree
+                       readNCBITaxonomyDatabase
                       ) where
 import Prelude
 import System.IO
-import Bio.TaxonomyData
+import Biobase.Taxonomy.Types
 import Text.Parsec.Prim (runP)
 import Text.ParserCombinators.Parsec
 import Control.Monad
 import Data.List
-import qualified Data.Vector as V
 import Data.Maybe
 import qualified Data.Either.Unwrap as E
 import Data.Graph.Inductive.Graph
-import Data.Graph.Inductive.Query.SP (sp)
-import Data.Graph.Inductive.Query.BFS (level)
 import Data.Graph.Inductive.Tree
-import Data.Graph.Inductive.Basic
-import qualified Data.GraphViz as GV
-import qualified Data.GraphViz.Printing as GVP
-import qualified Data.GraphViz.Attributes.Colors as GVAC
-import qualified Data.GraphViz.Attributes.Complete as GVA
-import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.ByteString.Char8 as B
-import qualified Data.Aeson as AE
 import qualified Data.Text.Lazy as T
 --------------------------------------------------------
 
@@ -393,203 +370,6 @@ genParserNCBITaxNode = do
   char '|'
   char '\n'
   return $ TaxNode (readInt _taxId) (readInt _parentTaxId) (readRank _rank) (B.pack _emblCode) (read _divisionId :: Int) (readBool _inheritedDivFlag) (read _geneticCodeId ::Int) (readBool _inheritedGCFlag) (read _mitochondrialGeneticCodeId ::Int) (readBool _inheritedMGCFlag) (readBool _genBankHiddenFlag) (readBool _hiddenSubtreeRootFlag) (B.pack _comments)
-
----------------------------------------
--- Processing functions
-
--- | Extract a subtree correpsonding to input node paths to root. Only nodes in level number distance to root are included. Used in Ids2TreeCompare tool.
-compareSubTrees :: [Gr SimpleTaxon Double] -> (Int,Gr CompareTaxon Double)
-compareSubTrees graphs = (length graphs,resultGraph)
-  where treesLabNodes = map labNodes graphs
-        treesLabEdges = map labEdges graphs
-        mergedNodes = nub (concat treesLabNodes)
-        mergedEdges = nub (concat treesLabEdges)
-        --annotate node in which of the compared trees they are present
-        comparedNodes = annotateTaxonsDifference treesLabNodes mergedNodes
-        resultGraph = mkGraph comparedNodes mergedEdges :: Gr CompareTaxon Double
-
-annotateTaxonsDifference  :: [[LNode SimpleTaxon]] -> [LNode SimpleTaxon] -> [LNode CompareTaxon]
-annotateTaxonsDifference  treesNodes mergedtreeNodes = comparedNodes
-  where comparedNodes = map (annotateTaxonDifference indexedTreesNodes) mergedtreeNodes
-        indexedTreesNodes = zip [0..(length treesNodes)] treesNodes
-
-
-annotateTaxonDifference :: [(Int,[LNode SimpleTaxon])] -> LNode SimpleTaxon -> LNode CompareTaxon
-annotateTaxonDifference indexedTreesNodes mergedtreeNode = comparedNode
-  where comparedNode = (simpleTaxId (snd mergedtreeNode),CompareTaxon (simpleScientificName (snd mergedtreeNode)) (simpleRank (snd mergedtreeNode)) currentInTree)
-        currentInTree = concatMap (\(i,treeNodes) -> [i | mergedtreeNode `elem` treeNodes]) indexedTreesNodes
-
--- | Extract a subtree corresponding to input node paths to root. Only nodes in level number distance to root are included. Used in Ids2Tree tool.
-extractTaxonomySubTreebyLevel :: [Node] -> Gr SimpleTaxon Double -> Maybe Int -> Gr SimpleTaxon Double
-extractTaxonomySubTreebyLevel inputNodes graph levelNumber = taxonomySubTree
-  where paths = nub (concatMap (getPath (1 :: Node) graph) inputNodes)
-        contexts = map (context graph) paths
-        lnodes = map labNode' contexts
-        ledges = nub (concatMap (out graph . fst) lnodes)
-        unfilteredTaxonomySubTree = mkGraph lnodes ledges :: Gr SimpleTaxon Double
-        filteredLNodes = filterNodesByLevel levelNumber lnodes unfilteredTaxonomySubTree
-        filteredledges = nub (concatMap (out graph . fst) filteredLNodes)
-        taxonomySubTree = mkGraph filteredLNodes filteredledges :: Gr SimpleTaxon Double
-
--- | Extract a subtree corresponding to input node paths to root. Only nodes in level number distance to root are included. Used in Ids2Tree tool.
-extractTaxonomySubTreebyLevelNew :: [Node] -> Gr SimpleTaxon Double -> Maybe Int -> Gr SimpleTaxon Double
-extractTaxonomySubTreebyLevelNew inputNodes graph levelNumber = taxonomySubTree
-  where inputNodeVector = V.fromList inputNodes
-        paths = V.concatMap (getVectorPath (1 :: Node) graph) inputNodeVector
-        contexts = V.map (context graph) paths
-        vlnodes = V.map labNode' contexts
-        ledges = concatMap (out graph . fst) lnodes
-        lnodes = V.toList vlnodes
-        --ledges = V.toList vledges
-        unfilteredTaxonomySubTree = mkGraph lnodes ledges :: Gr SimpleTaxon Double
-        filteredLNodes = filterNodesByLevel levelNumber lnodes unfilteredTaxonomySubTree
-        --filteredLNodesVector = V.fromList filteredLNodes
-        filteredledges = concatMap (out graph . fst) filteredLNodes
-        --filteredledges = V.toList filteredledgesVector
-        taxonomySubTree = mkGraph filteredLNodes filteredledges :: Gr SimpleTaxon Double
-
--- | Extract a subtree corresponding to input node paths to root. If a Rank is provided, all node that are less or equal are omitted
-extractTaxonomySubTreebyRank :: [Node] -> Gr SimpleTaxon Double -> Maybe Rank -> Gr SimpleTaxon Double
-extractTaxonomySubTreebyRank inputNodes graph highestRank = taxonomySubTree
-  where paths = nub (concatMap (getPath (1 :: Node) graph) inputNodes)
-        contexts = map (context graph) paths
-        lnodes = map labNode' contexts
-        filteredLNodes = filterNodesByRank highestRank lnodes
-        filteredledges = nub (concatMap (out graph . fst) filteredLNodes)
-        taxonomySubTree = mkGraph filteredLNodes filteredledges :: Gr SimpleTaxon Double
-
-getVectorPath :: Node -> Gr SimpleTaxon Double -> Node -> V.Vector Node
-getVectorPath root graph node =  maybe V.empty V.fromList (sp node root graph)
-
-getPath :: Node -> Gr SimpleTaxon Double -> Node -> Path
-getPath root graph node =  maybe [] id (sp node root graph)
-
--- | Extract parent node with specified Rank
-getParentbyRank :: Node -> Gr SimpleTaxon Double -> Maybe Rank -> Maybe (Node, SimpleTaxon)
-getParentbyRank inputNode graph requestedRank = filteredLNode
-  where path =  maybe [] id (sp (inputNode :: Node) (1 :: Node) graph)
-        nodeContext = map (context graph) path
-        lnode = map labNode' nodeContext
-        filteredLNode = findNodeByRank requestedRank lnode
-
--- | Filter nodes by distance from root
-filterNodesByLevel :: Maybe Int -> [(Node, SimpleTaxon)] -> Gr SimpleTaxon Double -> [(Node, SimpleTaxon)]
-filterNodesByLevel levelNumber inputNodes graph
-  | isJust levelNumber = filteredNodes
-  | otherwise = inputNodes
-    --distances of all nodes to root
-    where nodedistances = level (1::Node) (undir graph)
-          sortedNodeDistances = sortBy sortByNodeID nodedistances
-          sortedInputNodes = sortBy sortByNodeID inputNodes
-          zippedNodeDistancesInputNodes = zip sortedNodeDistances sortedInputNodes
-          zippedFilteredNodes = filter (\((_,distance),(_,_)) -> distance <= fromJust levelNumber) zippedNodeDistancesInputNodes
-          filteredNodes = map snd zippedFilteredNodes
-
-sortByNodeID :: (Node,a) -> (Node,a) -> Ordering
-sortByNodeID (n1, _) (n2, _)
-  | n1 < n2 = GT
-  | n1 > n2 = LT
-  | n1 == n2 = EQ
-  | otherwise = EQ
-
--- | Find only taxons of a specific rank in a list of input taxons
-findNodeByRank :: Maybe Rank -> [(t, SimpleTaxon)] -> Maybe (t, SimpleTaxon)
-findNodeByRank requestedRank inputNodes
-  | isJust requestedRank = filteredNodes
-  | otherwise = Nothing
-    where filteredNodes = find (\(_,t) -> simpleRank t == fromJust requestedRank) inputNodes
-
--- | Filter a list of input taxons for a minimal provided rank
-filterNodesByRank :: Maybe Rank -> [(t, SimpleTaxon)] -> [(t, SimpleTaxon)]
-filterNodesByRank highestRank inputNodes
-  | isJust highestRank = filteredNodes
-  | otherwise = inputNodes
-    where filteredNodes = filter (\(_,t) -> simpleRank t >= fromJust highestRank) inputNodes ++ noRankNodes
-          noRankNodes = filter (\(_,t) -> simpleRank t == Norank) inputNodes
-
--- | Returns path between 2 maybe nodes. Used in TreeDistance tool.
-safeNodePath :: Maybe Node -> Gr SimpleTaxon Double -> Maybe Node -> Either String Path
-safeNodePath nodeid1 graphOutput nodeid2
-  | isJust nodeid1 && isJust nodeid2 = Right  (maybe [] id (sp (fromJust nodeid1) (fromJust nodeid2) (undir graphOutput)))
-  | otherwise = Left "Both taxonomy ids must be provided for distance computation"
-
----------------------------------------
--- Visualisation functions
-
--- | Draw graph in dot format. Used in Ids2Tree tool.
-drawTaxonomy :: Bool -> Gr SimpleTaxon Double -> String
-drawTaxonomy withRank inputGraph = do
-  let nodeFormating = if withRank then nodeFormatWithRank else nodeFormatWithoutRank
-  let params = GV.nonClusteredParams {GV.isDirected       = True
-                       , GV.globalAttributes = [GV.GraphAttrs [GVA.Size (GVA.GSize (20 :: Double) (Just (20 :: Double)) False)]]
-                       , GV.isDotCluster     = const True
-                       --, GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack (show (simpleRank l) ++ "\n" ++ T.unpack (simpleScientificName l)))]
-                       , GV.fmtNode = nodeFormating
-                       , GV.fmtEdge          = const []
-                       }
-  let dotFormat = GV.graphToDot params inputGraph
-  let dottext = GVP.renderDot $ GVP.toDot dotFormat
-  T.unpack dottext
-
-nodeFormatWithRank :: (t, SimpleTaxon) -> [GVA.Attribute]
-nodeFormatWithRank (_,l) = [GV.textLabel (T.concat [T.pack (show (simpleRank l)), T.pack ("\n") , simpleScientificName l])]
-
-nodeFormatWithoutRank :: (t, SimpleTaxon) -> [GVA.Attribute]
-nodeFormatWithoutRank (_,l) = [GV.textLabel (simpleScientificName l)]
-
--- | Draw tree comparison graph in dot format. Used in Ids2TreeCompare tool.
-drawTaxonomyComparison :: Bool -> (Int,Gr CompareTaxon Double) -> String
-drawTaxonomyComparison withRank (treeNumber,inputGraph) = do
-  let cList = makeColorList treeNumber
-  let nodeFormating = if withRank then (compareNodeFormatWithRank cList) else (compareNodeFormatWithoutRank cList)
-  let params = GV.nonClusteredParams {GV.isDirected = True
-                       , GV.globalAttributes = []
-                       , GV.isDotCluster = const True
-                       --, GV.fmtNode = \ (_,l) -> [GV.textLabel (TL.pack (show (compareRank l) ++ "\n" ++ B.unpack (compareScientificName l))), GV.style GV.wedged, GVA.Color (selectColors (inTree l) cList)]
-                       , GV.fmtNode = nodeFormating
-                       , GV.fmtEdge = const []
-                       }
-  let dotFormat = GV.graphToDot params (grev inputGraph)
-  let dottext = GVP.renderDot $ GVP.toDot dotFormat
-  T.unpack dottext
-
-compareNodeFormatWithRank :: [GVA.Color] -> (t, CompareTaxon) -> [GVA.Attribute]
-compareNodeFormatWithRank cList (_,l) = [GV.textLabel (T.concat [T.pack (show (compareRank l) ++ "\n"),compareScientificName l]), GV.style GV.wedged, GVA.Color (selectColors (inTree l) cList)]
-
-compareNodeFormatWithoutRank :: [GVA.Color] -> (t, CompareTaxon) -> [GVA.Attribute]
-compareNodeFormatWithoutRank cList (_,l) = [GV.textLabel (compareScientificName l), GV.style GV.wedged, GVA.Color (selectColors (inTree l) cList)]
-
--- | Colors from color list are selected according to in which of the compared trees the node is contained.
-selectColors :: [Int] -> [GVA.Color] -> GVAC.ColorList
-selectColors inTrees currentColorList = GVAC.toColorList (map (\i -> currentColorList !! i) inTrees)
-
--- | A color list is sampled from the spectrum according to how many trees are compared.
-makeColorList :: Int -> [GVA.Color]
-makeColorList treeNumber = cList
-  where cList = map (\i -> GVAC.HSV ((fromIntegral i/fromIntegral neededColors) * 0.708) 0.5 1.0) [0..neededColors]
-        neededColors = treeNumber - 1
-
--- | Write tree representation either as dot or json to provided file path
-writeTree :: String -> String -> Bool -> Gr SimpleTaxon Double -> IO ()
-writeTree requestedFormat outputDirectoryPath withRank inputGraph = do
-  case requestedFormat of
-    "dot" -> writeDotTree outputDirectoryPath withRank inputGraph
-    "json"-> writeJsonTree outputDirectoryPath inputGraph
-    _ -> writeDotTree outputDirectoryPath withRank inputGraph
-
--- | Write tree representation as dot to provided file path.
--- Graphviz tools like dot can be applied to the written .dot file to generate e.g. svg-format images.
-writeDotTree :: String -> Bool -> Gr SimpleTaxon Double -> IO ()
-writeDotTree outputDirectoryPath withRank inputGraph = do
-  let diagram = drawTaxonomy withRank (grev inputGraph)
-  writeFile (outputDirectoryPath ++ "taxonomy.dot") diagram
-
--- | Write tree representation as json to provided file path.
--- You can visualize the result for example with 3Djs.
-writeJsonTree :: String -> Gr SimpleTaxon Double -> IO ()
-writeJsonTree outputDirectoryPath inputGraph = do
-  let jsonOutput = AE.encode (grev inputGraph)
-  L.writeFile (outputDirectoryPath ++ "taxonomy.json") jsonOutput
 
 ---------------------------------------
 -- Auxiliary functions
