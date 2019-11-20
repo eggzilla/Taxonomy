@@ -62,7 +62,7 @@ data TaxonName = TaxonName
   ,  dispName :: B.ByteString
   } deriving (Show, Eq)
 
-  -- | Lineage Taxons denote all parent Taxonomy nodes of a node retrieved by Entrez fetch
+-- | Lineage Taxons denote all parent Taxonomy nodes of a node retrieved by Entrez fetch
 data Lineage = Lineage
   {  lineageStartTaxId :: Int
   ,  lineageStartScienticName :: B.ByteString
