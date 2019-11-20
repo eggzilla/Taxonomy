@@ -2,17 +2,18 @@
 --   taxonomy data
 
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
-module Bio.TaxonomyData where
+module Biobase.Taxonomy.Types where
 import Prelude
---import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as B
 import qualified Data.Aeson as A
 import qualified Data.Vector as V
 --import Data.Graph.Inductive
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Tree
 import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL   
+import qualified Data.Text.Lazy as TL
 --import qualified Data.Text.Encoding
 
 -- | SimpleTaxon only contains the most relevant fields of a taxonomy entry.
@@ -22,9 +23,9 @@ data SimpleTaxon = SimpleTaxon
    -- node id in GenBank
    simpleTaxId :: Int,
    simpleScientificName :: TL.Text,
-   -- parent node id in GenBank taxonomy database               
+   -- parent node id in GenBank taxonomy database
    simpleParentTaxId :: Int,
-   -- rank of this node (superkingdom, kingdom, ...) 
+   -- rank of this node (superkingdom, kingdom, ...)
    simpleRank :: Rank
   }
   deriving (Show, Read, Eq)
@@ -34,7 +35,7 @@ data CompareTaxon = CompareTaxon
   {
    compareScientificName :: TL.Text,
    compareRank :: Rank,
-   -- number indicating in which trees, 
+   -- number indicating in which trees,
    inTree :: [Int]
   }
   deriving (Show, Read, Eq)
@@ -42,32 +43,42 @@ data CompareTaxon = CompareTaxon
 -- | Data structure for Entrez taxonomy fetch result
 data Taxon = Taxon
   {  taxonTaxId :: Int
-  ,  taxonScientificName :: String
+  ,  taxonScientificName :: B.ByteString
   ,  taxonParentTaxId :: Int
   ,  taxonRank :: Rank
-  ,  division :: String
+  ,  division :: B.ByteString
   ,  geneticCode :: TaxGenCode
   ,  mitoGeneticCode :: TaxGenCode
-  ,  lineage :: String
+  ,  lineage :: B.ByteString
   ,  lineageEx :: [LineageTaxon]
-  ,  createDate :: String
-  ,  updateDate :: String
-  ,  pubDate :: String
+  ,  createDate :: B.ByteString
+  ,  updateDate :: B.ByteString
+  ,  pubDate :: B.ByteString
   } deriving (Show, Eq)
 
 
 data TaxonName = TaxonName
-  {  classCDE :: String
-  ,  dispName :: String
+  {  classCDE :: B.ByteString
+  ,  dispName :: B.ByteString
   } deriving (Show, Eq)
+
+-- | Lineage Taxons denote all parent Taxonomy nodes of a node retrieved by Entrez fetch
+data Lineage = Lineage
+  {  lineageStartTaxId :: Int
+  ,  lineageStartScienticName :: B.ByteString
+  ,  lineageStartRank :: Rank
+  ,  lineageTaxons :: [LineageTaxon]
+  }
+  deriving (Show, Eq)
+
 
 -- | Lineage Taxons denote all parent Taxonomy nodes of a node retrieved by Entrez fetch
 data LineageTaxon = LineageTaxon
   {  lineageTaxId :: Int
-  ,  lineageScienticName :: String
+  ,  lineageScienticName :: B.ByteString
   ,  lineageRank :: Rank}
   deriving (Show, Eq)
-           
+
 -- | NCBI Taxonomy database dump hierachichal data structure
 -- as defined in ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump_readme.txt
 data NCBITaxDump = NCBITaxDump
@@ -88,22 +99,22 @@ data TaxCitation = TaxCitation
    -- the unique id of citation
    citId :: Int,
    -- citation key
-   citKey :: Maybe String,
+   citKey :: B.ByteString,
    -- unique id in PubMed database (0 if not in PubMed)
    pubmedId :: Maybe Int,
    -- unique id in MedLine database (0 if not in MedLine)
    medlineId :: Maybe Int,
    -- URL associated with citation
-   url :: Maybe String,
+   url :: B.ByteString,
    -- any text (usually article name and authors)
    -- The following characters are escaped in this text by a backslash:
    -- newline (appear as "\n"),
    -- tab character ("\t"),
    -- double quotes ('\"'),
    -- backslash character ("\\").
-   text :: Maybe String,
+   text :: B.ByteString,
    -- list of node ids separated by a single space
-   taxIdList :: Maybe [Int]
+   taxIdList :: [Int]
   }
   deriving (Show, Read, Eq)
 
@@ -121,10 +132,10 @@ data TaxDivision = TaxDivision
    -- taxonomy database division id
    divisionId :: Int,
    -- GenBank division code (three characters)
-   divisionCDE :: String,
+   divisionCDE :: B.ByteString,
    -- e.g. BCT, PLN, VRT, MAM, PRI...
-   divisonName :: String,
-   divisionComments :: Maybe String
+   divisonName :: B.ByteString,
+   divisionComments :: B.ByteString
   }
   deriving (Show, Read, Eq)
 
@@ -134,13 +145,13 @@ data TaxGenCode = TaxGenCode
    -- GenBank genetic code id
    geneticCodeId :: Int,
    -- genetic code name abbreviation
-   abbreviation :: Maybe String,
+   abbreviation :: B.ByteString,
    -- genetic code name
-   geneCodeName :: String,
+   geneCodeName :: B.ByteString,
    -- translation table for this genetic code
-   cde :: String,
+   cde :: B.ByteString,
    -- start codons for this genetic code
-   starts :: String
+   starts :: B.ByteString
   }
   deriving (Show, Read, Eq)
 
@@ -162,18 +173,18 @@ data TaxName = TaxName
    -- name itself
    nameTxt :: TL.Text,
    -- the unique variant of this name if name not unique
-   uniqueName :: TL.Text,
+   uniqueName :: B.ByteString,
    -- (synonym, common name, ...)
-   nameClass :: TL.Text
+   nameClass :: B.ByteString
   }
   deriving (Show, Read, Eq)
 
--- | Taxonomic ranks: NCBI uses the uncommon Speciessubgroup 
+-- | Taxonomic ranks: NCBI uses the uncommon Speciessubgroup
 data Rank = Norank | Form | Variety | Infraspecies | Subspecies | Speciessubgroup | Species | Speciesgroup | Superspecies | Series | Section | Subgenus | Genus | Subtribe | Tribe | Supertribe | Subfamily | Family | Superfamily | Parvorder | Infraorder | Suborder | Order | Superorder | Magnorder | Cohort | Legion | Parvclass | Infraclass | Subclass | Class | Superclass | Microphylum | Infraphylum | Subphylum | Phylum | Superphylum | Infrakingdom | Subkingdom | Kingdom | Superkingdom | Domain deriving (Eq, Ord, Show, Bounded, Enum)
 
 readsRank :: String -> [(Rank, String)]
 instance Read Rank where
-  readsPrec _ = readsRank 
+  readsPrec _ = readsRank
 
 readsRank input -- = [(Domain x)| x <- reads input ]
    | input == "domain" = [(Domain,"")]
@@ -190,35 +201,35 @@ readsRank input -- = [(Domain x)| x <- reads input ]
    | input == "class" = [(Class,"")]
    | input == "subclass" = [(Subclass,"")]
    | input == "infraclass" = [(Infraclass,"")]
-   | input == "parvclass " = [(Parvclass ,"")] 
-   | input == "legion" = [(Legion,"")] 
-   | input == "cohort" = [(Cohort,"")] 
-   | input == "magnorder " = [(Magnorder ,"")] 
-   | input == "superorder" = [(Superorder,"")] 
+   | input == "parvclass " = [(Parvclass ,"")]
+   | input == "legion" = [(Legion,"")]
+   | input == "cohort" = [(Cohort,"")]
+   | input == "magnorder " = [(Magnorder ,"")]
+   | input == "superorder" = [(Superorder,"")]
    | input == "order" = [(Order,"")]
    | input == "suborder" = [(Suborder,"")]
-   | input == "infraorder" = [(Infraorder,"")] 
-   | input == "parvorder" = [(Parvorder,"")] 
+   | input == "infraorder" = [(Infraorder,"")]
+   | input == "parvorder" = [(Parvorder,"")]
    | input == "superfamily" = [(Superfamily,"")]
    | input == "family" = [(Family,"")]
    | input == "subfamily" = [(Subfamily,"")]
    | input == "supertribe" = [(Supertribe,"")]
-   | input == "tribe" = [(Tribe,"")] 
-   | input == "subtribe" = [(Subtribe,"")] 
+   | input == "tribe" = [(Tribe,"")]
+   | input == "subtribe" = [(Subtribe,"")]
    | input == "genus" = [(Genus,"")]
-   | input == "subgenus" = [(Subgenus,"")] 
-   | input == "section" = [(Section,"")] 
-   | input == "series" = [(Series,"")] 
-   | input == "superspecies" = [(Superspecies,"")] 
+   | input == "subgenus" = [(Subgenus,"")]
+   | input == "section" = [(Section,"")]
+   | input == "series" = [(Series,"")]
+   | input == "superspecies" = [(Superspecies,"")]
    | input == "species group" = [(Speciesgroup,"")]
    | input == "species" = [(Species,"")]
    | input == "species subgroup" = [(Speciessubgroup,"")]
-   | input == "subspecies" = [(Subspecies,"")] 
+   | input == "subspecies" = [(Subspecies,"")]
    | input == "infraspecies" = [(Infraspecies,"")]
    | input == "varietas" = [(Variety,"")]
    | input == "forma" = [(Form,"")]
    | input == "no rank" = [(Norank,"")]
-   | otherwise = [(Norank,"")]  
+   | otherwise = [(Norank,"")]
 
 -- | Datastructure for entries of Taxonomy database dump nodes file
 data TaxNode = TaxNode
@@ -227,20 +238,20 @@ data TaxNode = TaxNode
    taxId :: Int,
    -- parent node id in GenBank taxonomy database
    parentTaxId :: Int,
-   -- rank of this node (superkingdom, kingdom, ...) 
+   -- rank of this node (superkingdom, kingdom, ...)
    rank :: Rank,
    -- locus-name prefix; not unique
-   emblCode :: Maybe String,
+   emblCode :: B.ByteString,
    -- see division.dmp file
-   nodeDivisionId :: String,
+   nodeDivisionId :: Int,
    -- 1 if node inherits division from parent
    inheritedDivFlag :: Bool,
    -- see gencode.dmp file
-   nodeGeneticCodeId :: String,
+   nodeGeneticCodeId :: Int,
    -- 1 if node inherits genetic code from parent
    inheritedGCFlag :: Bool,
-   -- see gencode.dmp file 
-   mitochondrialGeneticCodeId :: String,
+   -- see gencode.dmp file
+   mitochondrialGeneticCodeId :: Int,
    -- 1 if node inherits mitochondrial gencode from parent
    inheritedMGCFlag :: Bool,
    -- 1 if name is suppressed in GenBank entry lineage
@@ -248,34 +259,34 @@ data TaxNode = TaxNode
    -- 1 if this subtree has no sequence data yet
    hiddenSubtreeRootFlag :: Bool,
    -- free-text comments and citations
-   nodeComments :: Maybe String
+   nodeComments :: B.ByteString
   }
   deriving (Show, Read, Eq)
 
--- | Simple Gene2Accession table 
+-- | Simple Gene2Accession table
 data SimpleGene2Accession = SimpleGene2Accession
   { simpleTaxIdEntry :: Int,
-    simpleGenomicNucleotideAccessionVersion :: String
-  } deriving (Show, Eq, Read) 
+    simpleGenomicNucleotideAccessionVersion :: B.ByteString
+  } deriving (Show, Eq, Read)
 
 -- | Datastructure for Gene2Accession table
 data Gene2Accession = Gene2Accession
   { taxIdEntry :: Int,
     geneID :: Int,
-    status :: String,
-    rnaNucleotideAccessionVersion :: String,
-    rnaNucleotideGi :: String,
-    proteinAccessionVersion :: String,
-    proteinGi :: String,
-    genomicNucleotideAccessionVersion :: String,
-    genomicNucleotideGi :: String,
-    startPositionOnTheGenomicAccession :: String,
-    endPositionOnTheGenomicAccession ::  String,
-    orientation :: String,
-    assembly :: String,
-    maturePeptideAccessionVersion :: String,
-    maturePeptideGi :: String
-  } deriving (Show, Eq, Read)  
+    status :: B.ByteString,
+    rnaNucleotideAccessionVersion :: B.ByteString,
+    rnaNucleotideGi :: B.ByteString,
+    proteinAccessionVersion :: B.ByteString,
+    proteinGi :: B.ByteString,
+    genomicNucleotideAccessionVersion :: B.ByteString,
+    genomicNucleotideGi :: B.ByteString,
+    startPositionOnTheGenomicAccession :: B.ByteString,
+    endPositionOnTheGenomicAccession ::  B.ByteString,
+    orientation :: B.ByteString,
+    assembly :: B.ByteString,
+    maturePeptideAccessionVersion :: B.ByteString,
+    maturePeptideGi :: B.ByteString
+  } deriving (Show, Eq, Read)
 
 instance A.ToJSON (Gr SimpleTaxon Double) where
   toJSON inputGraph = simpleTaxonJSONValue inputGraph 1
