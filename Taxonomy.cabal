@@ -1,5 +1,5 @@
 name:                Taxonomy
-version:             2.0.0
+version:             2.1.0
 synopsis:            Libary for parsing, processing and vizualization of taxonomy data
 description:         Haskell cabal Taxonomy libary contains tools, parsers, datastructures and visualisation
                      for the NCBI (National Center for Biotechnology Information) Taxonomy datasources.
@@ -38,16 +38,15 @@ source-repository head
 
 source-repository this
   type:     git
-  location: https://github.com/eggzilla/Taxonomy/tree/v2.0.0
-  tag:      v2.0.0
+  location: https://github.com/eggzilla/Taxonomy/tree/v2.1.0
+  tag:      v2.1.0
 
 Library
   ghc-options:         -Wall -fno-warn-unused-do-bind
   default-language:    Haskell2010
-  build-depends:       base >=4.5 && <5, parsec, either-unwrap, fgl>=5.5.4.0, text, graphviz>=2999.12.0.4, bytestring, aeson, vector
+  build-depends:       base >=4.5 && <5, parsec, either-unwrap, fgl>=5.5.4.0, text, bytestring, aeson, vector
   Hs-source-dirs:      .
   Exposed-modules:     Biobase.Taxonomy.Types
                        Biobase.Taxonomy.Import
-                       Biobase.Taxonomy.Visualization
                        Biobase.Taxonomy.Utils
                        Biobase.Taxonomy
