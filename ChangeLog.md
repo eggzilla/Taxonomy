@@ -1,4 +1,7 @@
 -*-change-log-*-
+2.2.0 [Florian Eggenhofer](mailto:egg@cs.uni-freiburg.de) 30. May 2020
+
+        * Compatibility with 9.0.1, reintegrated visualisation libraries
 
 2.1.0 [Florian Eggenhofer](mailto:egg@cs.uni-freiburg.de) 17. December 2019
 
